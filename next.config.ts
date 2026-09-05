@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // a home do usuário é um repo git com lockfile próprio; fixa a raiz aqui
+  // a home do usuário (dev local) é um repo git com lockfile próprio; fixa a raiz
   turbopack: {
-    root: __dirname,
+    root: process.cwd(),
   },
 };
 
