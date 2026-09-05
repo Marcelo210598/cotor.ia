@@ -15,9 +15,9 @@ const DIMENSIONS: Dim[] = [
   { label: "Restrições", score: 9 },
   { label: "Estrutura", score: 10 },
   { label: "Formato de saída", score: 9 },
-  { label: "Exemplos", score: 6, note: "sem par de entrada/saída" },
+  { label: "Exemplos", score: 6, note: "sem imagem de referência" },
   { label: "Ambiguidade", score: 9 },
-  { label: "Robustez", score: 8, note: "não trata CSV incompleto" },
+  { label: "Robustez", score: 8, note: "não lista artefatos a evitar" },
 ];
 
 const OVERALL = 91;
@@ -53,22 +53,22 @@ export function ScoreSection() {
             <div>
               <p className="eyebrow mb-2">por que essa nota</p>
               <p className="text-sm leading-relaxed text-foreground/85">
-                Objetivo, formato e estrutura estão explícitos e sem ambiguidade.
-                A persona ancora o modelo no domínio certo. Perde pontos por não
-                trazer um exemplo de saída e por não dizer o que fazer quando o
-                CSV vier com buracos.
+                Estilo, assunto e enquadramento estão explícitos; a luz e o fundo
+                tiram a ambiguidade do resultado. Perde pontos por não trazer uma
+                imagem de referência e por não dizer quais artefatos evitar
+                (reflexo do estúdio, logos legíveis).
               </p>
             </div>
             <div>
               <p className="eyebrow mb-2">o que melhorar</p>
               <ul className="space-y-1.5 text-sm text-foreground/85">
                 <li className="flex gap-2">
-                  <span className="text-coral">→</span> Incluir 1 par
-                  entrada/saída como few-shot.
+                  <span className="text-coral">→</span> Anexar 1 imagem de
+                  referência de estilo.
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-coral">→</span> Definir fallback para
-                  linhas incompletas do CSV.
+                  <span className="text-coral">→</span> Listar artefatos a evitar
+                  (reflexo de equipamento, texto).
                 </li>
               </ul>
             </div>

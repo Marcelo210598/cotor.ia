@@ -5,32 +5,37 @@ import { Reticle } from "@/components/brand/reticle";
 import { LinkButton } from "@/components/ui/link-button";
 import { cn } from "@/lib/utils";
 
-const VAGUE = "me ajuda a analisar meus trades";
+const VAGUE = "faz uma imagem de um tênis pra anúncio";
 
 const STRUCTURED: { label: string; value: string }[] = [
   {
-    label: "Persona",
-    value: "Analista quantitativo de trading intradiário.",
+    label: "Estilo",
+    value:
+      "Fotografia de produto, still life comercial, lente ~50 mm, foco nítido de ponta a ponta.",
   },
   {
-    label: "Objetivo",
+    label: "Assunto",
     value:
-      "Avaliar 30 dias de operações no MNQ (M5) e apontar os 3 padrões de erro mais custosos.",
+      "Tênis de corrida branco com detalhes em coral, vista 3/4, levemente suspenso no ar.",
   },
   {
-    label: "Contexto",
+    label: "Cena",
     value:
-      "Estratégia da manhã · 1 entrada/dia · stop diário −$250 · histórico em CSV anexado.",
+      "Fundo cinza-claro em gradiente, sombra difusa embaixo, um respingo de água congelado.",
+  },
+  {
+    label: "Luz",
+    value:
+      "Softbox grande a 45° pela esquerda como luz principal, rim light fraco por trás.",
   },
   {
     label: "Restrições",
     value:
-      "Não inferir trades ausentes. Citar data/hora de cada operação. Responder em pt-BR.",
+      "Sem pessoas, sem texto, sem logo legível, sem marca-d'água. Cores fiéis ao produto.",
   },
   {
     label: "Formato",
-    value:
-      "Tabela (data, entrada, saída, R, nota A–E) + resumo de 5 linhas com o padrão dominante.",
+    value: "Quadrado 1:1, 2048 px, sem borda — pronto pro feed.",
   },
 ];
 
