@@ -82,7 +82,23 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 - ⚠️ `optimize` precisa de `maxTokens` alto (4000) — IR de prompt complexo
   trunca em 2400 e vira JSON inválido.
 
+## ✅ Deploy Vercel + mobile
+- **NO AR: `https://cotor-ia.vercel.app`** (projeto `cotor-ia`, team Hobby,
+  auto-deploy no push da `main`). Env vars no Vercel (Marcelo importou via
+  `.env`). Landing + páginas legais funcionando em produção.
+- 🔴 **PENDENTE: URI de redirecionamento de produção no Google Cloud** —
+  `https://cotor-ia.vercel.app/api/auth/callback/google` não está registrado →
+  login de prod dá `redirect_uri_mismatch`. Localhost OK. **É a 1ª coisa amanhã.**
+- Hero rotativo: cicla entre imagem / ata de reunião / e-mail de cobrança.
+- `/termos` e `/privacidade` criados (matam 404).
+- Crédito "criado por marcelo.dev" no rodapé do `/app` e da landing
+  (`MadeBy`, mono, glifo losango, discreto). **Falta a logo real do marcelo.dev**
+  — trocar o glifo quando o Marcelo mandar o arquivo.
+- Mobile testado (Playwright @ 390px): sem overflow horizontal, tudo empilha,
+  score/pricing/pipeline OK. `/entrar` alinhado ao topo no mobile.
+
 ## 🚧 Em progresso / próximo
+- **AMANHÃ 1º:** URI de redirect prod no Google Cloud → testar login em produção.
 - **Fase 4 — Organize + Reuse:** biblioteca (`/app/prompts`, lista + busca +
   tags), histórico de versões por prompt (árvore v1→v2→…, comparar, restaurar —
   lineage já no schema), variáveis/templates reutilizáveis.
