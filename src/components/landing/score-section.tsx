@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScoreGauge } from "@/components/cotor/score-gauge";
 import { cn } from "@/lib/utils";
 
 type Dim = { label: string; score: number; note?: string };
@@ -35,7 +36,7 @@ export function ScoreSection() {
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:py-24 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-16">
         <div className="flex flex-col items-center gap-6 lg:items-start">
           <p className="eyebrow">Prompt Score</p>
-          <Gauge value={OVERALL} active={visible} />
+          <ScoreGauge value={OVERALL} grade="A" run={visible} />
           <p className="max-w-xs text-center text-sm text-muted-foreground lg:text-left">
             Rubrica de 10 dimensões técnicas. Cada nota vem com o trecho que a
             justifica — não é pontuação inventada.
@@ -83,94 +84,6 @@ export function ScoreSection() {
         </div>
       </div>
     </section>
-  );
-}
-
-function Gauge({ value, active }: { value: number; active: boolean }) {
-  const [display, setDisplay] = useState(0);
-  const R = 78;
-  const C = 2 * Math.PI * R;
-  const pct = active ? value / 100 : 0;
-
-  useEffect(() => {
-    if (!active) return;
-    let cancelled = false;
-    const start = performance.now();
-    const tick = (now: number) => {
-      if (cancelled) return;
-      const t = Math.min(1, (now - start) / 900);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplay(Math.round(eased * value));
-      if (t < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-    return () => {
-      cancelled = true;
-    };
-  }, [active, value]);
-
-  return (
-    <div className="relative size-52">
-      <svg viewBox="0 0 200 200" className="size-full -rotate-90">
-        {/* crosshair — motivo da mira */}
-        <g
-          stroke="var(--hairline)"
-          strokeWidth="1"
-          className="rotate-90 [transform-origin:center]"
-        >
-          <line x1="100" y1="8" x2="100" y2="34" />
-          <line x1="100" y1="166" x2="100" y2="192" />
-          <line x1="8" y1="100" x2="34" y2="100" />
-          <line x1="166" y1="100" x2="192" y2="100" />
-        </g>
-        {/* ticks das 10 dimensões */}
-        {DIMENSIONS.map((_, i) => {
-          const a = (i / DIMENSIONS.length) * 2 * Math.PI;
-          const x1 = 100 + Math.cos(a) * 92;
-          const y1 = 100 + Math.sin(a) * 92;
-          const x2 = 100 + Math.cos(a) * 98;
-          const y2 = 100 + Math.sin(a) * 98;
-          return (
-            <line
-              key={i}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke="var(--muted-foreground)"
-              strokeWidth="2"
-              opacity="0.5"
-            />
-          );
-        })}
-        <circle
-          cx="100"
-          cy="100"
-          r={R}
-          fill="none"
-          stroke="var(--secondary)"
-          strokeWidth="10"
-        />
-        <circle
-          cx="100"
-          cy="100"
-          r={R}
-          fill="none"
-          stroke="var(--coral)"
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={C}
-          strokeDashoffset={C * (1 - pct)}
-          style={{ transition: "stroke-dashoffset 900ms cubic-bezier(0.22,1,0.36,1)" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-heading text-5xl tabular-nums text-foreground">
-          {display}
-        </span>
-        <span className="eyebrow mt-1 !tracking-[0.2em]">de 100 · nota A</span>
-      </div>
-    </div>
   );
 }
 

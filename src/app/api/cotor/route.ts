@@ -3,15 +3,10 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import {
-  analyzeIntent,
-  synthesizePrompt,
-  scorePrompt,
-  PROMPT_VERSION,
-  JUDGE_MODEL,
-} from "@/lib/ai/engine";
+import { analyzeIntent, synthesizePrompt, scorePrompt, JUDGE_MODEL } from "@/lib/ai/engine";
+import { saveVersion } from "@/lib/ai/store";
 import { LlmError } from "@/lib/ai/llm";
-import type { IntentAnalysis } from "@/lib/ai/schema";
+import type { IntentAnalysis, PromptIR, ScoreResult } from "@/lib/ai/schema";
 
 export const maxDuration = 60;
 
@@ -128,15 +123,10 @@ async function persist(args: {
   analysis: IntentAnalysis;
   intent: string;
   answers?: { id: string; pergunta: string; resposta: string }[];
-  ir: unknown;
+  ir: PromptIR;
   rendered: string;
   target: string;
-  score: {
-    overall: number;
-    grade: string;
-    dimensoes: unknown;
-    veredito: string;
-  };
+  score: ScoreResult;
 }): Promise<string> {
   const prompt = args.existingId
     ? await prisma.prompt.update({
@@ -169,25 +159,14 @@ async function persist(args: {
     }
   }
 
-  await prisma.promptVersion.create({
-    data: {
-      promptId: prompt.id,
-      number: 1,
-      action: "GENERATE",
-      modelTarget: args.target,
-      ir: args.ir as object,
-      rendered: args.rendered,
-      scores: {
-        create: {
-          overall: args.score.overall,
-          grade: args.score.grade,
-          dimensions: args.score.dimensoes as object,
-          verdict: args.score.veredito,
-          judgeModel: JUDGE_MODEL,
-          rubricVersion: PROMPT_VERSION,
-        },
-      },
-    },
+  await saveVersion({
+    promptId: prompt.id,
+    number: 1,
+    action: "GENERATE",
+    modelTarget: args.target,
+    ir: args.ir,
+    rendered: args.rendered,
+    score: args.score,
   });
 
   await prisma.usageEvent.create({

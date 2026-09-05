@@ -4,7 +4,7 @@ import { DIMENSION_KEYS, TASK_TYPES } from "./schema";
  * Prompts internos do COTOR — versionados aqui, no repo. Cada saída registra
  * qual versão a produziu (reprodutibilidade). Ao mexer num prompt, suba a versão.
  */
-export const PROMPT_VERSION = "2026-09-05.1";
+export const PROMPT_VERSION = "2026-09-05.2";
 
 const PRINCIPIOS = `Você é o motor de engenharia de prompts do COTOR. Você NÃO conversa com o usuário
 final e NÃO executa a tarefa dele — você faz a engenharia do prompt que ele vai usar
@@ -154,4 +154,49 @@ persona, passos ou "formato de resposta" de LLM de texto.`;
 export function scoreUser(rendered: string, contexto?: string) {
   const head = contexto ? `Contexto: ${contexto}\n\n` : "";
   return `${head}Prompt renderizado a avaliar:\n"""\n${rendered}\n"""`;
+}
+
+// ─────────────────────────── 4. Otimização (loop v2) ──────────────────────────
+
+export const optimizeSystem = `${PRINCIPIOS}
+
+TAREFA: você recebe um Prompt IR e o resultado do Prompt Score. Reescreva o IR
+atacando as dimensões mais fracas, sem estragar as que já estão boas.
+
+- Mantenha a mesma estrutura de campos do IR.
+- Foque nos "fix" apontados pelo score e nas dimensões com nota baixa.
+- Não invente contexto que o usuário não deu — se faltou informação, adicione um
+  guardrail ou uma restrição explícita em vez de chutar um fato.
+- Se for prompt de IMAGE, siga as mesmas regras da síntese de imagem.
+
+Formato de saída (JSON): o mesmo objeto Prompt IR
+{
+  "persona": <string>, "objetivo": <string>, "contexto": [<string>],
+  "restricoes": [<string>], "passos": [<string>], "formatoSaida": <string>,
+  "exemplos": [{ "entrada": <string>, "saida": <string> }],
+  "criteriosSucesso": [<string>], "guardrails": [<string>]
+}`;
+
+export function optimizeUser(input: {
+  taskType: string;
+  irJson: string;
+  overall: number;
+  dimensoesFracas: { key: string; score: number; fix: string }[];
+  oQueMelhorar: string[];
+}) {
+  const fracas =
+    input.dimensoesFracas
+      .map((d) => `- ${d.key} (${d.score}/10): ${d.fix || "melhorar"}`)
+      .join("\n") || "(nenhuma dimensão crítica)";
+  return `Tipo de tarefa: ${input.taskType}
+Nota atual: ${input.overall}/100
+
+Prompt IR atual:
+${input.irJson}
+
+Dimensões mais fracas:
+${fracas}
+
+O que o score pediu pra melhorar:
+${input.oQueMelhorar.map((m) => `- ${m}`).join("\n")}`;
 }

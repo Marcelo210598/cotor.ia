@@ -1,20 +1,36 @@
 import { DIMENSION_LABELS, type ScoreResult } from "@/lib/ai/schema";
+import { ScoreGauge } from "@/components/cotor/score-gauge";
 import { cn } from "@/lib/utils";
 
-export function ScoreCard({ score }: { score: ScoreResult }) {
+export function ScoreCard({
+  score,
+  delta,
+}: {
+  score: ScoreResult;
+  /** variação vs. versão anterior, se houver */
+  delta?: number;
+}) {
   return (
     <div className="rounded-lg border border-border bg-card/60 p-5">
-      <div className="flex items-baseline gap-3">
-        <span className="eyebrow">Prompt Score</span>
-        <span className="font-mono text-2xl tabular-nums text-coral">
-          {score.overall}
-          <span className="text-muted-foreground">/100</span>
-        </span>
-        <span className="rounded border border-border px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
-          {score.grade}
-        </span>
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+        <ScoreGauge value={score.overall} grade={score.grade} size="sm" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="eyebrow">Prompt Score</span>
+            {typeof delta === "number" && delta !== 0 && (
+              <span
+                className={cn(
+                  "font-mono text-xs tabular-nums",
+                  delta > 0 ? "text-coral" : "text-muted-foreground",
+                )}
+              >
+                {delta > 0 ? `+${delta}` : delta} vs. versão anterior
+              </span>
+            )}
+          </div>
+          <p className="mt-1.5 text-sm text-foreground/80">{score.veredito}</p>
+        </div>
       </div>
-      <p className="mt-2 text-sm text-foreground/80">{score.veredito}</p>
 
       <div className="mt-5 grid gap-x-8 gap-y-2 sm:grid-cols-2">
         {score.dimensoes.map((d) => (

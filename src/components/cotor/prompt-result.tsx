@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScoreCard } from "@/components/cotor/score-card";
@@ -34,10 +34,18 @@ export function PromptResult({
   ir,
   rendered,
   score,
+  version = 1,
+  delta,
+  onOptimize,
+  optimizing = false,
 }: {
   ir: PromptIR;
   rendered: string;
   score: ScoreResult;
+  version?: number;
+  delta?: number;
+  onOptimize?: () => void;
+  optimizing?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -53,38 +61,63 @@ export function PromptResult({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="eyebrow">o prompt</p>
-          <Button size="sm" variant="outline" onClick={copy}>
-            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-            {copied ? "Copiado" : "Copiar"}
-          </Button>
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="eyebrow">o prompt · v{version}</p>
+            <Button size="sm" variant="outline" onClick={copy}>
+              {copied ? (
+                <Check className="size-3.5" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
+              {copied ? "Copiado" : "Copiar"}
+            </Button>
+          </div>
+          <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-border bg-card p-4 font-mono text-[0.8rem] leading-relaxed text-foreground/90">
+            {rendered}
+          </pre>
+          <div className="rounded-lg border border-border/70 bg-card/40 p-4">
+            <p className="eyebrow mb-3">estrutura</p>
+            <dl className="space-y-2.5">
+              {irBlocks(ir).map((block) => (
+                <div
+                  key={block.label}
+                  className="grid grid-cols-[76px_1fr] gap-3"
+                >
+                  <dt className="eyebrow pt-0.5 !tracking-[0.14em]">
+                    {block.label}
+                  </dt>
+                  <dd className="space-y-1 text-sm text-foreground/85">
+                    {block.lines.map((l, i) => (
+                      <p key={i}>{l}</p>
+                    ))}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
         </div>
-        <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-border bg-card p-4 font-mono text-[0.8rem] leading-relaxed text-foreground/90">
-          {rendered}
-        </pre>
-        <div className="rounded-lg border border-border/70 bg-card/40 p-4">
-          <p className="eyebrow mb-3">estrutura</p>
-          <dl className="space-y-2.5">
-            {irBlocks(ir).map((block) => (
-              <div key={block.label} className="grid grid-cols-[76px_1fr] gap-3">
-                <dt className="eyebrow pt-0.5 !tracking-[0.14em]">
-                  {block.label}
-                </dt>
-                <dd className="space-y-1 text-sm text-foreground/85">
-                  {block.lines.map((l, i) => (
-                    <p key={i}>{l}</p>
-                  ))}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
+
+        <ScoreCard score={score} delta={delta} />
       </div>
 
-      <ScoreCard score={score} />
+      {onOptimize && (
+        <div className="flex items-center gap-3">
+          <Button onClick={onOptimize} disabled={optimizing}>
+            {optimizing ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Sparkles className="size-4" />
+            )}
+            {optimizing ? "Otimizando…" : "Otimizar prompt"}
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            reescreve as dimensões fracas e gera a v{version + 1}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

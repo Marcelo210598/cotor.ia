@@ -62,28 +62,42 @@ export async function callHaiku({
   }
 }
 
-export async function callGroq({
-  system,
-  user,
-  maxTokens = 4000,
-  temperature = 0.3,
-}: CallOpts): Promise<string> {
-  try {
-    const res = await groq().chat.completions.create({
-      model: GROQ_MODEL,
-      max_tokens: maxTokens,
-      temperature,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    });
-    const text = res.choices[0]?.message?.content ?? "";
-    if (!text) throw new LlmError("Groq retornou resposta vazia.");
-    return text;
-  } catch (err) {
-    throw new LlmError(`Groq: ${(err as Error).message}`);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export async function callGroq(
+  { system, user, maxTokens = 4000, temperature = 0.3 }: CallOpts,
+  jsonMode = false,
+): Promise<string> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await groq().chat.completions.create({
+        model: GROQ_MODEL,
+        max_tokens: maxTokens,
+        temperature,
+        ...(jsonMode
+          ? { response_format: { type: "json_object" as const } }
+          : {}),
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      });
+      const text = res.choices[0]?.message?.content ?? "";
+      if (!text) throw new LlmError("Groq retornou resposta vazia.");
+      return text;
+    } catch (err) {
+      const msg = (err as Error).message ?? "";
+      // rate limit: espera o tempo sugerido (até 12s) e tenta 1× de novo
+      if (attempt === 0 && /429|rate_limit/i.test(msg)) {
+        const m = msg.match(/try again in ([\d.]+)s/i);
+        const wait = Math.min(12000, m ? Number(m[1]) * 1000 + 500 : 6000);
+        await sleep(wait);
+        continue;
+      }
+      throw new LlmError(`Groq: ${msg}`);
+    }
   }
+  throw new LlmError("Groq: rate limit persistente.");
 }
 
 /** Extrai o primeiro objeto JSON de uma resposta (tolera cercas ```json e texto ao redor). */
@@ -103,16 +117,17 @@ export function extractJson(raw: string): unknown {
   }
 }
 
-/** Chama Haiku pedindo JSON e valida contra o schema. 1 retry em falha de parse. */
-export async function callHaikuJson<T>(
+const JSON_HINT =
+  "\n\nResponda APENAS com um único objeto JSON válido, sem texto antes ou depois, sem comentários.";
+
+async function callJson<T>(
   schema: z.ZodType<T>,
   opts: CallOpts,
+  run: (o: CallOpts) => Promise<string>,
 ): Promise<T> {
-  const jsonSystem =
-    opts.system +
-    "\n\nResponda APENAS com um único objeto JSON válido, sem texto antes ou depois, sem comentários.";
+  const withHint = { ...opts, system: opts.system + JSON_HINT };
   for (let attempt = 0; attempt < 2; attempt++) {
-    const raw = await callHaiku({ ...opts, system: jsonSystem });
+    const raw = await run(withHint);
     try {
       return schema.parse(extractJson(raw));
     } catch (err) {
@@ -124,4 +139,14 @@ export async function callHaikuJson<T>(
     }
   }
   throw new LlmError("inalcançável");
+}
+
+/** Chama Haiku pedindo JSON e valida contra o schema. 1 retry em falha de parse. */
+export function callHaikuJson<T>(schema: z.ZodType<T>, opts: CallOpts) {
+  return callJson(schema, opts, callHaiku);
+}
+
+/** Chama Groq (JSON mode) e valida contra o schema. Mais rápido/barato que o Haiku. */
+export function callGroqJson<T>(schema: z.ZodType<T>, opts: CallOpts) {
+  return callJson(schema, opts, (o) => callGroq(o, true));
 }

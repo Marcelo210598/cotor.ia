@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, Loader2, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PromptResult } from "@/components/cotor/prompt-result";
@@ -47,6 +48,9 @@ export function Composer() {
   const [premissas, setPremissas] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<ResultResponse | null>(null);
+  const [version, setVersion] = useState(1);
+  const [delta, setDelta] = useState<number | undefined>(undefined);
+  const [optimizing, setOptimizing] = useState(false);
 
   async function call(payload: Record<string, unknown>): Promise<ApiResponse> {
     const res = await fetch("/api/cotor", {
@@ -65,8 +69,8 @@ export function Composer() {
     try {
       const data = await call({ intent });
       if ("error" in data) throw new Error(data.error);
+      setPromptId(data.promptId);
       if (data.stage === "clarify") {
-        setPromptId(data.promptId);
         setQuestions(data.analysis.perguntas);
         setPremissas(data.analysis.premissas);
         setPhase("clarify");
@@ -99,12 +103,45 @@ export function Composer() {
       });
       if ("error" in data) throw new Error(data.error);
       if (data.stage === "result") {
+        setPromptId(data.promptId);
         setResult(data);
         setPhase("result");
       }
     } catch (e) {
       setError((e as Error).message);
       setPhase("clarify");
+    }
+  }
+
+  async function optimize() {
+    if (!promptId) return;
+    setError(null);
+    setOptimizing(true);
+    try {
+      const res = await fetch("/api/cotor/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promptId }),
+      });
+      const data = await res.json();
+      if ("error" in data) throw new Error(data.error);
+      setResult((prev) =>
+        prev ? { ...prev, ir: data.ir, rendered: data.rendered, score: data.score } : prev,
+      );
+      setVersion(data.number);
+      setDelta(data.delta);
+      const d: number = data.delta;
+      toast.success(
+        d > 0
+          ? `v${data.number}: +${d} pontos`
+          : d === 0
+            ? `v${data.number}: mesma nota`
+            : `v${data.number}: ${d} pontos`,
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setOptimizing(false);
     }
   }
 
@@ -117,6 +154,8 @@ export function Composer() {
     setAnswers({});
     setResult(null);
     setError(null);
+    setVersion(1);
+    setDelta(undefined);
   }
 
   if (phase === "loading") {
@@ -141,10 +180,15 @@ export function Composer() {
             Novo
           </Button>
         </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <PromptResult
           ir={result.ir}
           rendered={result.rendered}
           score={result.score}
+          version={version}
+          delta={delta}
+          onOptimize={optimize}
+          optimizing={optimizing}
         />
       </div>
     );

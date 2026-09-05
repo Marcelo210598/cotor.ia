@@ -206,16 +206,19 @@ model ClarificationSession {
 }
 
 model Score {
-  id             String   @id @default(cuid())
-  versionId      String
-  version        PromptVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  overall        Int      // 0–100
-  grade          String   // A–E
-  dimensions     Json     // [{ key, score, weight, evidence, rationale, fix }]
-  verdict        String   @db.Text
-  judgeModel     String
-  rubricVersion  String
-  createdAt      DateTime @default(now())
+  id            String        @id @default(cuid())
+  versionId     String
+  version       PromptVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  overall       Int // 0–100
+  grade         String // A–E
+  dimensions    Json // [{ key, score, evidencia, motivo, fix }]
+  verdict       String   @default("") @db.Text
+  rationale     String   @default("") @db.Text // "por que essa nota"
+  improvements  String[] @default([]) // "o que melhorar"
+  samples       Int      @default(1) // amostras de self-consistency
+  judgeModel    String
+  rubricVersion String
+  createdAt     DateTime @default(now())
 
   @@index([versionId])
   @@map("score")
