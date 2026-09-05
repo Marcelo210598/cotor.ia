@@ -1,0 +1,235 @@
+// COTOR.IA — modelo de dados
+// Núcleo: o "Prompt IR" (representação intermediária estruturada) vive em
+// PromptVersion.ir como JSON. Guardamos o objeto, não a string.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── Auth (Better Auth) ───────────────────────────
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  plan     Plan      @default(FREE)
+  sessions Session[]
+  accounts Account[]
+
+  subscription Subscription?
+  projects     Project[]
+  prompts      Prompt[]
+  usageEvents  UsageEvent[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// ─────────────────────────── Billing ───────────────────────────
+
+enum Plan {
+  FREE
+  PRO
+  TEAM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+model Subscription {
+  id                String             @id @default(cuid())
+  userId            String             @unique
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan              Plan
+  status            SubscriptionStatus @default(ACTIVE)
+  provider          String             @default("asaas")
+  externalId        String?
+  currentPeriodEnd  DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@map("subscription")
+}
+
+// ─────────────────────────── Prompts ───────────────────────────
+
+enum TaskType {
+  GENERATION
+  ANALYSIS
+  EXTRACTION
+  CLASSIFICATION
+  REWRITE
+  CONVERSATION
+  AGENT
+  CODE
+  CREATIVE
+  OTHER
+}
+
+enum VersionAction {
+  GENERATE
+  OPTIMIZE
+  MANUAL_EDIT
+  BRANCH
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prompts Prompt[]
+
+  @@index([userId])
+  @@map("project")
+}
+
+model Prompt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  title     String
+  intent    String       @db.Text // a frase crua que o usuário escreveu
+  taskType  TaskType     @default(OTHER)
+  tags      String[]     @default([])
+  archived  Boolean      @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions             PromptVersion[]
+  clarificationSessions ClarificationSession[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@map("prompt")
+}
+
+model PromptVersion {
+  id        String        @id @default(cuid())
+  promptId  String
+  prompt    Prompt        @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  parentId  String?       // linhagem: de qual versão esta derivou
+  parent    PromptVersion? @relation("VersionLineage", fields: [parentId], references: [id], onDelete: SetNull)
+  children  PromptVersion[] @relation("VersionLineage")
+
+  number      Int           // v1, v2, ... por prompt
+  action      VersionAction
+  modelTarget String        @default("groq") // groq | haiku | gpt | gemini ...
+
+  ir       Json   // o Prompt IR estruturado
+  rendered String @db.Text // texto renderizado pro modelo-alvo
+
+  createdAt DateTime @default(now())
+
+  scores Score[]
+
+  @@unique([promptId, number])
+  @@index([promptId])
+  @@map("prompt_version")
+}
+
+model ClarificationSession {
+  id        String   @id @default(cuid())
+  promptId  String
+  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  questions Json     // [{ id, question, why, priority }]
+  answers   Json?    // { [questionId]: answer }
+  createdAt DateTime @default(now())
+
+  @@index([promptId])
+  @@map("clarification_session")
+}
+
+model Score {
+  id             String   @id @default(cuid())
+  versionId      String
+  version        PromptVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  overall        Int      // 0–100
+  grade          String   // A–E
+  dimensions     Json     // [{ key, score, weight, evidence, rationale, fix }]
+  verdict        String   @db.Text
+  judgeModel     String
+  rubricVersion  String
+  createdAt      DateTime @default(now())
+
+  @@index([versionId])
+  @@map("score")
+}
+
+model UsageEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String   // generate | score | optimize | playground_run
+  model     String?
+  tokensIn  Int?
+  tokensOut Int?
+  costUsd   Float?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("usage_event")
+}
