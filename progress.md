@@ -63,12 +63,30 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   perguntas → "Montar o prompt" → prompt de imagem + Score 78/B. Persistência
   confirmada no Neon (1 user, 1 prompt, 1 version, 1 score, 1 clarification).
 
+## ✅ Concluído — Fase 3 (Prompt Score UI + Optimize)
+- Gauge-mira do score → componente reutilizável (`src/components/cotor/
+  score-gauge.tsx`), usado no landing E no `/app`.
+- **Botão "Otimizar prompt"** → `optimizePrompt` reescreve o IR nas dimensões
+  fracas → v2 (PromptVersion com `parentId`/lineage) + novo score, mostra o
+  **delta** na tela e toast. Rota `POST /api/cotor/optimize`.
+- **Overall = média ponderada das 10 dimensões** (determinística), não o número
+  que o judge chuta. Pesos em `DIMENSION_WEIGHTS`. Faz o delta do Otimizar ter
+  sentido (v2 melhor nas dims → nota sobe de verdade).
+- **Latência**: `analyzeIntent` e `scorePrompt` migraram pro **Groq**
+  (`gpt-oss-120b`, JSON mode + retry em 429). v1 caiu de ~45s → **~20s**.
+  Síntese e otimização seguem no Haiku (qualidade de escrita).
+- **Self-consistency**: mediana de N amostras implementada. Default **1**
+  (free tier Groq = 8k TPM não aguenta 3 paralelas). `SCORE_SAMPLES=3` no env
+  quando o Groq virar pago.
+- `Score` ganhou `rationale`/`improvements`/`samples`; helper `saveVersion`.
+- ⚠️ `optimize` precisa de `maxTokens` alto (4000) — IR de prompt complexo
+  trunca em 2400 e vira JSON inválido.
+
 ## 🚧 Em progresso / próximo
-- **Fase 3 — Prompt Score UI + Optimize:** subir a UI do score pra nível produto
-  (gauge-mira reutilizável do landing no `/app`), self-consistency (pontuar 3×
-  mediana), botão "Otimizar prompt" → v2 (lineage já no schema).
-- **Fase 4 — Organize + Reuse:** biblioteca, histórico de versões (o schema já
-  suporta lineage), botão "Otimizar prompt" (loop de reescrita → v2).
+- **Fase 4 — Organize + Reuse:** biblioteca (`/app/prompts`, lista + busca +
+  tags), histórico de versões por prompt (árvore v1→v2→…, comparar, restaurar —
+  lineage já no schema), variáveis/templates reutilizáveis.
+- **Fase 5 — Test (Playground) + Billing (Asaas) + rate limit (Upstash).**
 
 ## ⚠️ Decisões / armadilhas
 - **Prisma 7** tem breaking change (sem `url` no schema, exige `prisma.config.ts`
@@ -85,7 +103,7 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 |---|---|---|
 | 1 | Fundação (scaffold, tema, landing, auth, db) | ✅ |
 | 2 | Núcleo de IA — Create (Prompt IR, pipeline, /app) | ✅ |
-| 3 | Prompt Score UI nível produto + Optimize (loop v2) | ⬜ |
+| 3 | Prompt Score UI + Optimize (loop v2, latência) | ✅ |
 | 4 | Organize + Reuse (biblioteca, versões, templates) | ⬜ |
 | 5 | Test (Playground) + Billing (Asaas) + rate limit | ⬜ |
 | 6 | Deploy (domínio, Vercel, SEO, página pública de prompt) | ⬜ |
