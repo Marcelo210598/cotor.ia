@@ -119,6 +119,7 @@ enum TaskType {
   AGENT
   CODE
   CREATIVE
+  IMAGE
   OTHER
 }
 

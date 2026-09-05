@@ -31,13 +31,35 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 - Better Auth wired (`src/lib/auth.ts`, rota `/api/auth/[...all]`, client).
 - `.env` com Neon + Groq + Haiku. `.env` fora do git.
 
+## ✅ Concluído — Fase 2 (Núcleo de IA: Create)
+- `src/lib/ai/`: `schema.ts` (Prompt IR + IntentAnalysis + ScoreResult, zod),
+  `llm.ts` (clientes Haiku + Groq, `callHaikuJson` com retry), `prompts.ts`
+  (prompts internos versionados, `PROMPT_VERSION`), `render.ts` (IR→texto;
+  genérico / Claude-XML / **IMAGE** = prompt de modelo de imagem + negative),
+  `engine.ts` (`analyzeIntent` → `synthesizePrompt` → `scorePrompt`).
+- Motor **consciente do tipo de tarefa** — IMAGE gera prompt no formato certo
+  (Midjourney/DALL·E), não instrução pra LLM de texto.
+- Rota `POST /api/cotor` (session-gated): analisa → se falta info devolve
+  perguntas, senão sintetiza + pontua e persiste (Prompt + PromptVersion + Score
+  + ClarificationSession + UsageEvent).
+- UI `/app`: composer (intenção → perguntas → resultado), `PromptResult`
+  (prompt + botão copiar + estrutura do IR), `ScoreCard` (10 dimensões + veredito
+  + por que essa nota / o que melhorar).
+- **Testado end-to-end com as chaves reais** (`.dev/test-engine.ts`): imagem e
+  texto. Score coerente (imagem 91→ após ajuste; ata de reunião 82/B).
+- Motor roda **só no Haiku** por ora (síntese + judge). Groq já plugado
+  (`callGroq`) — é a alavanca de custo/velocidade pra Fase 5.
+- ⚠️ Latência: full run ~40–50s (score ~29s é o gargalo). `maxDuration=60` na
+  rota. Otimizar depois (Groq no judge / streaming / menos tokens).
+
 ## 🚧 Em progresso / próximo
-- **Google OAuth:** criar client no Google Cloud (Marcelo + Claude juntos),
-  redirect `http://localhost:3000/api/auth/callback/google`. Sem isso o login
-  não funciona.
-- **Fase 2 — Núcleo de IA:** Prompt IR + pipeline (intent → gap analysis →
-  clarification → synthesis → render) + integração Groq/Haiku + prompts internos
-  versionados no repo.
+- **Google OAuth (Marcelo + Claude juntos):** criar client Web no Google Cloud,
+  redirect `http://localhost:3000/api/auth/callback/google`. Sem isso o login não
+  funciona e o `/app` não dá pra testar pela UI.
+- **Fase 3 — Prompt Score:** subir a UI do score pra nível produto (gauge-mira
+  reutilizável), self-consistency (pontuar 3× mediana), gold set de calibração.
+- **Fase 4 — Organize + Reuse:** biblioteca, histórico de versões (o schema já
+  suporta lineage), botão "Otimizar prompt" (loop de reescrita → v2).
 
 ## ⚠️ Decisões / armadilhas
 - **Prisma 7** tem breaking change (sem `url` no schema, exige `prisma.config.ts`
@@ -53,8 +75,8 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 | Fase | Escopo | Status |
 |---|---|---|
 | 1 | Fundação (scaffold, tema, landing, auth, db) | ✅ |
-| 2 | Núcleo de IA — Create + Optimize (Prompt IR, pipeline) | ⬜ |
-| 3 | Prompt Score (rubrica híbrida, UI do score) | ⬜ |
+| 2 | Núcleo de IA — Create (Prompt IR, pipeline, /app) | ✅ |
+| 3 | Prompt Score UI nível produto + Optimize (loop v2) | ⬜ |
 | 4 | Organize + Reuse (biblioteca, versões, templates) | ⬜ |
 | 5 | Test (Playground) + Billing (Asaas) + rate limit | ⬜ |
 | 6 | Deploy (domínio, Vercel, SEO, página pública de prompt) | ⬜ |

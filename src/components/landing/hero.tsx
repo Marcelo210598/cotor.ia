@@ -129,6 +129,13 @@ export function Hero() {
           </LinkButton>
         </div>
 
+        <p className="eyebrow mt-7 !tracking-[0.2em]">
+          Create <span className="text-coral/60">·</span> Optimize{" "}
+          <span className="text-coral/60">·</span> Test{" "}
+          <span className="text-coral/60">·</span> Organize{" "}
+          <span className="text-coral/60">·</span> Reuse
+        </p>
+
         {/* transformação antes → depois */}
         <div className="mt-14 grid items-center gap-4 lg:grid-cols-[1fr_auto_1.35fr]">
           {/* ANTES */}
