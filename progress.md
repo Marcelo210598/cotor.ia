@@ -52,12 +52,21 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 - ⚠️ Latência: full run ~40–50s (score ~29s é o gargalo). `maxDuration=60` na
   rota. Otimizar depois (Groq no judge / streaming / menos tokens).
 
+## ✅ Google OAuth — FEITO e testado
+- Projeto Google Cloud `cotor-ia` · consentimento Externo (modo Teste) · client
+  Web `cotor-ia-local` · redirect `http://localhost:3000/api/auth/callback/google`
+  · usuário de teste = e-mail do Marcelo. Credenciais no `.env`.
+- **Fix necessário:** Better Auth 1.7 exige coluna `issuer` no `Account`
+  (identidade escopada por issuer) — sem ela o callback dava
+  `internal_server_error`. Adicionada + `db push`.
+- **Testado end-to-end pela UI**: `/entrar → Google → /app` → intenção → 4
+  perguntas → "Montar o prompt" → prompt de imagem + Score 78/B. Persistência
+  confirmada no Neon (1 user, 1 prompt, 1 version, 1 score, 1 clarification).
+
 ## 🚧 Em progresso / próximo
-- **Google OAuth (Marcelo + Claude juntos):** criar client Web no Google Cloud,
-  redirect `http://localhost:3000/api/auth/callback/google`. Sem isso o login não
-  funciona e o `/app` não dá pra testar pela UI.
-- **Fase 3 — Prompt Score:** subir a UI do score pra nível produto (gauge-mira
-  reutilizável), self-consistency (pontuar 3× mediana), gold set de calibração.
+- **Fase 3 — Prompt Score UI + Optimize:** subir a UI do score pra nível produto
+  (gauge-mira reutilizável do landing no `/app`), self-consistency (pontuar 3×
+  mediana), botão "Otimizar prompt" → v2 (lineage já no schema).
 - **Fase 4 — Organize + Reuse:** biblioteca, histórico de versões (o schema já
   suporta lineage), botão "Otimizar prompt" (loop de reescrita → v2).
 
