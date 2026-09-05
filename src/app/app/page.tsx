@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { Wordmark } from "@/components/brand/wordmark";
+import { MadeBy } from "@/components/brand/made-by";
 import { SignOutButton } from "./sign-out-button";
 import { Composer } from "./composer";
 
@@ -35,6 +36,13 @@ export default async function AppHome() {
           <Composer />
         </div>
       </main>
+
+      <footer className="border-t border-border/70">
+        <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-5">
+          <span className="eyebrow !tracking-[0.18em]">COTOR.IA</span>
+          <MadeBy />
+        </div>
+      </footer>
     </div>
   );
 }

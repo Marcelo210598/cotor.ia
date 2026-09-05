@@ -28,9 +28,9 @@ export default function EntrarPage() {
       </div>
 
       {/* card de login */}
-      <div className="flex items-center justify-center p-6">
+      <div className="flex items-start justify-center p-6 pt-20 sm:items-center sm:pt-6">
         <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden">
+          <div className="mb-10 lg:hidden">
             <Wordmark />
           </div>
           <h1 className="font-heading text-2xl tracking-tight">Entrar no COTOR</h1>
