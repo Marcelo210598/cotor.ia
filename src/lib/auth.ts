@@ -17,6 +17,12 @@ export const auth = betterAuth({
   appName: "COTOR.IA",
   baseURL,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
+  user: {
+    additionalFields: {
+      // plano vem junto na sessão — usado pro rate limit e gates de plano
+      plan: { type: "string", input: false, defaultValue: "FREE" },
+    },
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 dias
     updateAge: 60 * 60 * 24, // renova a cada 1 dia de uso

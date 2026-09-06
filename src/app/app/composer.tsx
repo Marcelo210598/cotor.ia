@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LinkButton } from "@/components/ui/link-button";
 import { Textarea } from "@/components/ui/textarea";
 import { PromptResult } from "@/components/cotor/prompt-result";
+import { PlaygroundPanel } from "@/components/cotor/playground-panel";
 import type {
   ClarifyingQuestion,
   IntentAnalysis,
@@ -201,6 +202,10 @@ export function Composer() {
           taskType={result.analysis.taskType}
           onOptimize={optimize}
           optimizing={optimizing}
+        />
+        <PlaygroundPanel
+          text={result.rendered}
+          disabled={result.analysis.taskType === "IMAGE"}
         />
       </div>
     );

@@ -1,5 +1,12 @@
 // Só é importado por rotas/ações no servidor.
-import { callHaikuJson, callGroqJson, HAIKU_MODEL, GROQ_MODEL } from "./llm";
+import {
+  callHaiku,
+  callGroq,
+  callHaikuJson,
+  callGroqJson,
+  HAIKU_MODEL,
+  GROQ_MODEL,
+} from "./llm";
 import {
   DIMENSION_KEYS,
   intentAnalysisSchema,
@@ -159,6 +166,23 @@ export async function optimizePrompt(input: {
   const rendered = renderIR(ir, input.taskType, input.target);
   const score = await scorePrompt(rendered, { taskType: input.taskType });
   return { ir, rendered, score };
+}
+
+/**
+ * Playground — roda o prompt do usuário num modelo real, como se ele tivesse
+ * colado no ChatGPT. `text` é o prompt inteiro; vai como mensagem do usuário.
+ */
+export type PlaygroundModel = "groq" | "haiku";
+
+export async function runPrompt(
+  text: string,
+  model: PlaygroundModel = "groq",
+): Promise<{ output: string; model: string }> {
+  const opts = { system: "", user: text, temperature: 0.7, maxTokens: 2000 };
+  if (model === "haiku") {
+    return { output: await callHaiku(opts), model: HAIKU_MODEL };
+  }
+  return { output: await callGroq(opts), model: GROQ_MODEL };
 }
 
 /** Passo 5 — transforma um prompt concreto num template com {{variaveis}}. (Haiku) */

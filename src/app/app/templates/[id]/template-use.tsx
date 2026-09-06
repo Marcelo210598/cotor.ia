@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PlaygroundPanel } from "@/components/cotor/playground-panel";
 import { extractVars, fillTemplate, humanizeVar } from "@/lib/templates/vars";
 import type { TemplateDetail } from "@/lib/templates/queries";
 
@@ -205,6 +206,7 @@ export function TemplateUse({ template }: { template: TemplateDetail }) {
                 falta preencher: {missing.map(humanizeVar).join(", ")}
               </p>
             )}
+            <PlaygroundPanel text={filled} />
           </div>
         </div>
       )}

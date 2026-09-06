@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { optimizePrompt, JUDGE_MODEL } from "@/lib/ai/engine";
 import { saveVersion } from "@/lib/ai/store";
 import { LlmError } from "@/lib/ai/llm";
+import { rateLimit } from "@/lib/ratelimit";
 import {
   promptIrSchema,
   scoreResultSchema,
@@ -24,6 +25,9 @@ export async function POST(req: Request) {
   if (!session) {
     return NextResponse.json({ error: "Precisa entrar." }, { status: 401 });
   }
+
+  const limited = await rateLimit("optimize", session.user.id, session.user.plan);
+  if (limited) return limited;
 
   let promptId: string;
   try {

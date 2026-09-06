@@ -17,6 +17,8 @@
     "@anthropic-ai/sdk": "^0.124.0",
     "@base-ui/react": "^1.8.0",
     "@prisma/client": "^6.19.3",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.4",
     "better-auth": "^1.7.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

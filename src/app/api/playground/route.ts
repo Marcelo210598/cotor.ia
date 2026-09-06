@@ -3,14 +3,16 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { templatize, SYNTH_MODEL } from "@/lib/ai/engine";
-import { extractVars } from "@/lib/templates/vars";
+import { runPrompt } from "@/lib/ai/engine";
 import { LlmError } from "@/lib/ai/llm";
 import { rateLimit } from "@/lib/ratelimit";
 
 export const maxDuration = 60;
 
-const bodySchema = z.object({ text: z.string().min(1).max(20000) });
+const bodySchema = z.object({
+  text: z.string().min(1).max(20000),
+  model: z.enum(["groq", "haiku"]).optional(),
+});
 
 export async function POST(req: Request) {
   const session = await auth.api
@@ -20,41 +22,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Precisa entrar." }, { status: 401 });
   }
 
-  const limited = await rateLimit(
-    "templatize",
-    session.user.id,
-    session.user.plan,
-  );
+  const limited = await rateLimit("playground", session.user.id, session.user.plan);
   if (limited) return limited;
 
-  let text: string;
+  let body: z.infer<typeof bodySchema>;
   try {
-    text = bodySchema.parse(await req.json()).text;
+    body = bodySchema.parse(await req.json());
   } catch {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
   try {
-    const result = await templatize(text);
-    // body é a fonte da verdade das variáveis
-    const variables = extractVars(result.body);
+    const { output, model } = await runPrompt(body.text, body.model ?? "groq");
 
     await prisma.usageEvent.create({
-      data: {
-        userId: session.user.id,
-        kind: "templatize",
-        model: SYNTH_MODEL,
-      },
+      data: { userId: session.user.id, kind: "playground_run", model },
     });
 
-    return NextResponse.json({ body: result.body, variables });
+    return NextResponse.json({ output, model });
   } catch (err) {
     if (err instanceof LlmError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
-    console.error("[/api/templates/templatize]", err);
+    console.error("[/api/playground]", err);
     return NextResponse.json(
-      { error: "Não consegui templatizar agora. Tenta de novo." },
+      { error: "Não consegui rodar o prompt agora. Tenta de novo." },
       { status: 500 },
     );
   }

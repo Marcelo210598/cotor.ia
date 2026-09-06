@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PromptResult } from "@/components/cotor/prompt-result";
+import { PlaygroundPanel } from "@/components/cotor/playground-panel";
 import { VersionDiff } from "@/components/cotor/version-diff";
 import { SaveAsTemplateDialog } from "./save-as-template-dialog";
 import { cn } from "@/lib/utils";
@@ -353,25 +354,31 @@ export function PromptDetail({ detail }: { detail: PromptDetailData }) {
               })()}
             </div>
           ) : selected ? (
-            selected.score ? (
-              <PromptResult
-                ir={selected.ir}
-                rendered={selected.rendered}
-                score={selected.score}
-                version={selected.number}
-                taskType={detail.taskType}
+            <div className="space-y-6">
+              {selected.score ? (
+                <PromptResult
+                  ir={selected.ir}
+                  rendered={selected.rendered}
+                  score={selected.score}
+                  version={selected.number}
+                  taskType={detail.taskType}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <p className="eyebrow">o prompt · v{selected.number}</p>
+                  <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-border bg-card p-4 font-mono text-[0.8rem] leading-relaxed text-foreground/90">
+                    {selected.rendered}
+                  </pre>
+                  <p className="text-xs text-muted-foreground">
+                    Essa versão não tem score guardado.
+                  </p>
+                </div>
+              )}
+              <PlaygroundPanel
+                text={selected.rendered}
+                disabled={detail.taskType === "IMAGE"}
               />
-            ) : (
-              <div className="space-y-4">
-                <p className="eyebrow">o prompt · v{selected.number}</p>
-                <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-border bg-card p-4 font-mono text-[0.8rem] leading-relaxed text-foreground/90">
-                  {selected.rendered}
-                </pre>
-                <p className="text-xs text-muted-foreground">
-                  Essa versão não tem score guardado.
-                </p>
-              </div>
-            )
+            </div>
           ) : null}
         </div>
       </div>

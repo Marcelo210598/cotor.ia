@@ -174,8 +174,31 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   Souza" → 4 variáveis certas (`nome_cliente`, `numero_fatura`, `valor_devido`,
   `data_vencimento`) → preencher → copiar. Dados de teste limpos do Neon.
 
+## ✅ Concluído — Fase 5a + 5b (Playground + Rate limit)
+- **Playground:** `runPrompt(text, model)` em `engine.ts` roda o prompt num
+  modelo real (Groq "Rápido" padrão ou Claude Haiku), como se colasse no ChatGPT.
+  Rota `POST /api/playground`. Componente `PlaygroundPanel` (seletor de modelo,
+  "Rodar o prompt" → saída scrollável). Aparece no **composer** (após gerar),
+  **`/app/prompts/[id]`** (por versão) e **`/app/templates/[id]`** (texto
+  preenchido). IMAGE = desabilitado ("cola direto no Midjourney/DALL·E").
+- **Rate limit (Upstash):** `src/lib/ratelimit.ts` — `@upstash/ratelimit` +
+  `@upstash/redis`, janela deslizante de 1 dia, limites por plano
+  (FREE 20 gerações/dia · PRO 300 · TEAM 1000; idem optimize/templatize/playground).
+  Aplicado em `/api/cotor` (só na síntese), `optimize`, `templates/templatize`,
+  `playground`. Retorna 429 com msg amigável (+ "assina o Pro" no Free).
+  **Fallback:** sem env do Upstash → não limita nada (não quebra local nem deploy).
+  Redis fora do ar → deixa passar e loga.
+- **Plano na sessão:** `auth.ts` ganhou `user.additionalFields.plan` — vem junto
+  no `session.user.plan`, usado pelo rate limit.
+- Testado: playground roda (Groq respondeu), IMAGE desabilitado. Rate limit
+  inativo até plugar Upstash.
+- 🔴 **PENDENTE: criar Redis no Upstash** (console.upstash.com, sa-east-1) →
+  Marcelo passa `UPSTASH_REDIS_REST_URL` + `_TOKEN` → põe no `.env` + Vercel.
+
 ## 🚧 Em progresso / próximo
-- **Fase 5 — Test (Playground) + Billing (Asaas) + rate limit (Upstash).**
+- **Upstash:** plugar as credenciais e testar o 429 de verdade.
+- **Fase 5c — Billing (Asaas):** checkout + webhook + downgrade. Sessão dedicada
+  (precisa da API key do Asaas + teste com Pix real).
 - Logo real do marcelo.dev pro `MadeBy`.
 
 ## ⚠️ Decisões / armadilhas

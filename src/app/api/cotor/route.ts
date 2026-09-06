@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { analyzeIntent, synthesizePrompt, scorePrompt, JUDGE_MODEL } from "@/lib/ai/engine";
 import { saveVersion } from "@/lib/ai/store";
 import { LlmError } from "@/lib/ai/llm";
+import { rateLimit } from "@/lib/ratelimit";
 import type { IntentAnalysis, PromptIR, ScoreResult } from "@/lib/ai/schema";
 
 export const maxDuration = 60;
@@ -52,6 +53,10 @@ export async function POST(req: Request) {
     if (wantsQuestions) {
       return NextResponse.json({ stage: "clarify", analysis });
     }
+
+    // rate limit só na síntese (o passo caro); clarify não conta.
+    const limited = await rateLimit("cotor", userId, session.user.plan);
+    if (limited) return limited;
 
     // ── síntese + score ──
     const respostas = (body.answers ?? []).map((a) => ({
