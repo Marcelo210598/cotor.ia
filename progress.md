@@ -106,11 +106,33 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 - Mobile testado (Playwright @ 390px): sem overflow horizontal, tudo empilha,
   score/pricing/pipeline OK. `/entrar` alinhado ao topo no mobile.
 
+## ✅ Concluído — Fase 4a + 4b (Organize)
+- **Layout compartilhado do app** (`src/app/app/layout.tsx`): session-gate +
+  header com nav (Novo / Biblioteca, `app-nav.tsx` com estado ativo) + footer.
+  `/app/page.tsx` virou só o conteúdo do composer.
+- **Biblioteca** `/app/prompts`: lista todos os prompts do user (título,
+  intenção, tipo, tags, última nota, nº de versões, data relativa). Busca
+  client-side (título+intenção) + filtro por tipo de tarefa + por tag. Menu ⋯
+  por card: arquivar/desarquivar, excluir (dialog de confirmação). Filtro
+  "Arquivados (n)" só aparece se houver; volta pra lista ativa sozinho quando o
+  último sai. Fetch server-side direto (`src/lib/prompts/queries.ts`).
+- **Detalhe** `/app/prompts/[id]`: trilha de versões (v1→vN, ação + nota),
+  clicar mostra o `PromptResult` daquela versão (prompt + IR + score).
+  **Comparar** duas versões → `VersionDiff` (`src/components/cotor/version-diff.tsx`,
+  diff campo-a-campo do IR: +/− por item, delta de nota). **Restaurar** versão
+  antiga → nova versão `BRANCH` (`POST /api/prompts/[id]/restore`) copiando o
+  score da origem (texto idêntico = nota determinística, zero LLM). Editar
+  título (inline) e tags (chips + input) → `PATCH /api/prompts/[id]`.
+- Composer ganhou botão "Na biblioteca" no resultado (link pro detalhe).
+- **Sem migration** — schema já tinha tudo (`tags`, `archived`, `PromptVersion.parentId`).
+- Build + lint limpos. Testado no navegador: lista, filtros, detalhe, compare,
+  restore, arquivar/desarquivar — tudo ok.
+
 ## 🚧 Em progresso / próximo
-- **Fase 4 — Organize + Reuse:** biblioteca (`/app/prompts`, lista + busca +
-  tags), histórico de versões por prompt (árvore v1→v2→…, comparar, restaurar —
-  lineage já no schema), variáveis/templates reutilizáveis.
+- **Fase 4c — Reuse:** variáveis `{{x}}` no prompt + templates reutilizáveis
+  (provável modelo `Template` novo → migration).
 - **Fase 5 — Test (Playground) + Billing (Asaas) + rate limit (Upstash).**
+- Logo real do marcelo.dev pro `MadeBy`.
 
 ## ⚠️ Decisões / armadilhas
 - **Prisma 7** tem breaking change (sem `url` no schema, exige `prisma.config.ts`
@@ -128,7 +150,7 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 | 1 | Fundação (scaffold, tema, landing, auth, db) | ✅ |
 | 2 | Núcleo de IA — Create (Prompt IR, pipeline, /app) | ✅ |
 | 3 | Prompt Score UI + Optimize (loop v2, latência) | ✅ |
-| 4 | Organize + Reuse (biblioteca, versões, templates) | ⬜ |
+| 4 | Organize + Reuse | 🟡 4a+4b (biblioteca, versões, compare, restore) ✅ · 4c (templates) ⬜ |
 | 5 | Test (Playground) + Billing (Asaas) + rate limit | ⬜ |
 | 6 | Deploy (domínio, Vercel, SEO, página pública de prompt) | ⬜ |
 

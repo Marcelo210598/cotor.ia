@@ -21,6 +21,20 @@ export const TASK_TYPES = [
 ] as const;
 export type TaskType = (typeof TASK_TYPES)[number];
 
+export const TASK_TYPE_LABELS: Record<TaskType, string> = {
+  GENERATION: "Geração",
+  ANALYSIS: "Análise",
+  EXTRACTION: "Extração",
+  CLASSIFICATION: "Classificação",
+  REWRITE: "Reescrita",
+  CONVERSATION: "Conversa",
+  AGENT: "Agente",
+  CODE: "Código",
+  CREATIVE: "Criativo",
+  IMAGE: "Imagem",
+  OTHER: "Outro",
+};
+
 export const promptIrSchema = z.object({
   persona: z
     .string()

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Loader2, RotateCcw } from "lucide-react";
+import { ArrowRight, Library, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { LinkButton } from "@/components/ui/link-button";
 import { Textarea } from "@/components/ui/textarea";
 import { PromptResult } from "@/components/cotor/prompt-result";
 import type {
@@ -175,10 +176,22 @@ export function Composer() {
             <p className="eyebrow">intenção</p>
             <p className="text-sm text-foreground/80">{intent}</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={reset}>
-            <RotateCcw className="size-3.5" />
-            Novo
-          </Button>
+          <div className="flex items-center gap-1.5">
+            {promptId && (
+              <LinkButton
+                variant="ghost"
+                size="sm"
+                href={`/app/prompts/${promptId}`}
+              >
+                <Library className="size-3.5" />
+                Na biblioteca
+              </LinkButton>
+            )}
+            <Button variant="ghost" size="sm" onClick={reset}>
+              <RotateCcw className="size-3.5" />
+              Novo
+            </Button>
+          </div>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <PromptResult

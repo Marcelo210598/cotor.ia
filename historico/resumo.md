@@ -24,7 +24,7 @@ multi-modelo, diff campo-a-campo e score consistente.
 | 1 | Fundação: scaffold, tema, landing, `/entrar`, auth, schema no Neon | ✅ 05/09 |
 | 2 | Núcleo de IA — Create (Prompt IR, pipeline `src/lib/ai/`, `/app`) | ✅ 05/09 |
 | 3 | Prompt Score UI + Optimize (loop v2, latência ~20s) | ✅ 05/09 |
-| 4 | Organize + Reuse (biblioteca, versões, templates) | ⬜ |
+| 4 | Organize + Reuse | 🟡 4a+4b ✅ (biblioteca `/app/prompts`, versões, compare, restore, tags/arquivar) · 4c templates ⬜ |
 | 5 | Test (Playground) + Billing (Asaas) + rate limit | ⬜ |
 | 6 | Deploy (domínio, SEO, página pública de prompt) | 🟡 no ar em `cotor-ia.vercel.app`, falta domínio/SEO |
 
@@ -32,7 +32,7 @@ multi-modelo, diff campo-a-campo e score consistente.
 funcionando em produção (testado 06/09).
 
 ## Pendências imediatas
-- Fase 4: `/app/prompts` (biblioteca + busca + tags), histórico de versões, templates.
+- Fase 4c: variáveis `{{x}}` + templates reutilizáveis (provável migration).
 - Logo real do marcelo.dev pro `MadeBy` no rodapé.
 
 ## Auth (06/09 — resolvido)
