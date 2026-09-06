@@ -29,6 +29,7 @@ model User {
   subscription Subscription?
   projects     Project[]
   prompts      Prompt[]
+  templates    Template[]
   usageEvents  UsageEvent[]
 
   @@map("user")
@@ -228,7 +229,7 @@ model UsageEvent {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind      String   // generate | score | optimize | playground_run
+  kind      String   // generate | score | optimize | playground_run | templatize
   model     String?
   tokensIn  Int?
   tokensOut Int?
@@ -237,4 +238,24 @@ model UsageEvent {
 
   @@index([userId, createdAt])
   @@map("usage_event")
+}
+
+// ─────────────────────────── Templates (Reuse) ───────────────────────────
+
+/// Texto reutilizável com buracos {{variavel}}. Nasce de um prompt da
+/// biblioteca (templatizado por IA ou não) ou é criado do zero.
+model Template {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  body           String   @db.Text // texto com {{variaveis}}
+  variables      String[] @default([]) // nomes das variáveis, na ordem em que aparecem
+  sourcePromptId String? // se veio de um prompt da biblioteca
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+  @@map("template")
 }

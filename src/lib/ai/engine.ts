@@ -5,11 +5,13 @@ import {
   intentAnalysisSchema,
   promptIrSchema,
   scoreResultSchema,
+  templatizeSchema,
   type DimensionScore,
   type IntentAnalysis,
   type PromptIR,
   type ScoreResult,
   type TaskType,
+  type TemplatizeResult,
 } from "./schema";
 import {
   intentSystem,
@@ -20,6 +22,8 @@ import {
   scoreUser,
   optimizeSystem,
   optimizeUser,
+  templatizeSystem,
+  templatizeUser,
   PROMPT_VERSION,
 } from "./prompts";
 import { renderIR, type ModelTarget } from "./render";
@@ -155,6 +159,17 @@ export async function optimizePrompt(input: {
   const rendered = renderIR(ir, input.taskType, input.target);
   const score = await scorePrompt(rendered, { taskType: input.taskType });
   return { ir, rendered, score };
+}
+
+/** Passo 5 — transforma um prompt concreto num template com {{variaveis}}. (Haiku) */
+export async function templatize(rendered: string): Promise<TemplatizeResult> {
+  const result = await callHaikuJson(templatizeSchema, {
+    system: templatizeSystem,
+    user: templatizeUser(rendered),
+    temperature: 0.2,
+    maxTokens: 4000,
+  });
+  return result;
 }
 
 // ─────────────────────────── helpers de score ───────────────────────────

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PromptResult } from "@/components/cotor/prompt-result";
 import { VersionDiff } from "@/components/cotor/version-diff";
+import { SaveAsTemplateDialog } from "./save-as-template-dialog";
 import { cn } from "@/lib/utils";
 import { TASK_TYPE_LABELS } from "@/lib/ai/schema";
 import type { PromptDetailData, DetailVersion } from "@/lib/prompts/queries";
@@ -140,35 +141,44 @@ export function PromptDetail({ detail }: { detail: PromptDetailData }) {
           Biblioteca
         </Link>
 
-        <div className="mt-3 flex items-start gap-2">
-          {editingTitle ? (
-            <Input
-              autoFocus
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={saveTitle}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveTitle();
-                if (e.key === "Escape") {
-                  setTitle(detail.title);
-                  setEditingTitle(false);
-                }
-              }}
-              className="h-9 max-w-md text-lg"
+        <div className="mt-3 flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-2">
+            {editingTitle ? (
+              <Input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={saveTitle}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveTitle();
+                  if (e.key === "Escape") {
+                    setTitle(detail.title);
+                    setEditingTitle(false);
+                  }
+                }}
+                className="h-9 max-w-md text-lg"
+              />
+            ) : (
+              <button
+                onClick={() => setEditingTitle(true)}
+                className="group inline-flex items-center gap-2 text-left"
+              >
+                <h1 className="font-heading text-2xl tracking-tight">{title}</h1>
+                <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
+            )}
+            {detail.archived && (
+              <Badge variant="secondary" className="mt-1.5">
+                arquivado
+              </Badge>
+            )}
+          </div>
+          {selected && (
+            <SaveAsTemplateDialog
+              promptId={detail.id}
+              promptTitle={detail.title}
+              rendered={selected.rendered}
             />
-          ) : (
-            <button
-              onClick={() => setEditingTitle(true)}
-              className="group inline-flex items-center gap-2 text-left"
-            >
-              <h1 className="font-heading text-2xl tracking-tight">{title}</h1>
-              <Pencil className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-            </button>
-          )}
-          {detail.archived && (
-            <Badge variant="secondary" className="mt-1.5">
-              arquivado
-            </Badge>
           )}
         </div>
 

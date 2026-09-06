@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/app", label: "Novo" },
   { href: "/app/prompts", label: "Biblioteca" },
+  { href: "/app/templates", label: "Templates" },
 ];
 
 export function AppNav() {

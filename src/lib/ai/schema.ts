@@ -131,3 +131,14 @@ export const scoreResultSchema = z.object({
   oQueMelhorar: z.array(z.string()),
 });
 export type ScoreResult = z.infer<typeof scoreResultSchema>;
+
+/** Templatizar — troca os específicos de um prompt concreto por {{variaveis}}. */
+export const templatizeSchema = z.object({
+  body: z
+    .string()
+    .describe("O prompt com os valores específicos trocados por {{snake_case}}."),
+  variables: z
+    .array(z.string())
+    .describe("Nomes das variáveis criadas, em snake_case, na ordem de uso."),
+});
+export type TemplatizeResult = z.infer<typeof templatizeSchema>;

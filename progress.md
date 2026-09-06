@@ -151,9 +151,30 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   mainstream recusam retrato fotorrealista de pessoa pública. `PROMPT_VERSION` →
   `2026-09-06.2`. Testado: prompt sai limpo + callout aparece.
 
+## ✅ Concluído — Fase 4c (Reuse: templates + variáveis)
+- **Migration:** modelo `Template` (name, description, body, variables[],
+  sourcePromptId) — `db push` no Neon feito.
+- **Motor:** `templatize` (Haiku) — troca os valores específicos de um prompt
+  concreto por `{{snake_case}}`. Prompt interno bem conservador (0–6 variáveis,
+  **não toca em blocos de exemplo/few-shot**, não parametriza input que o usuário
+  cola depois). `PROMPT_VERSION` → `2026-09-06.4`.
+- **`/app/templates`** — lista + busca + excluir.
+- **`/app/templates/[id]`** — form com 1 campo por variável → **preview ao vivo**
+  do texto final → copiar; modo editar (nome/descrição/corpo, re-detecta `{{x}}`).
+- **"Salvar como template"** no `/app/prompts/[id]` — dialog: nome + "Templatizar
+  com IA" + edição do corpo antes de salvar.
+- APIs: `GET/POST /api/templates`, `GET`(via query)/`PATCH`/`DELETE
+  /api/templates/[id]`, `POST /api/templates/templatize`.
+- Utils `src/lib/templates/vars.ts` (`extractVars`/`fillTemplate`/`humanizeVar`).
+- Nav ganhou "Templates".
+- **Fix de brinde:** `DialogContent` não tinha `max-height` — um textarea grande
+  (prompt inteiro) estourava o modal pra fora da tela. Adicionado
+  `max-h-[calc(100dvh-2rem)] overflow-y-auto` no `dialog.tsx` + cap nos textareas.
+- Testado end-to-end no navegador: templatizar "email de cobrança pro Ricardo
+  Souza" → 4 variáveis certas (`nome_cliente`, `numero_fatura`, `valor_devido`,
+  `data_vencimento`) → preencher → copiar. Dados de teste limpos do Neon.
+
 ## 🚧 Em progresso / próximo
-- **Fase 4c — Reuse:** variáveis `{{x}}` no prompt + templates reutilizáveis
-  (provável modelo `Template` novo → migration).
 - **Fase 5 — Test (Playground) + Billing (Asaas) + rate limit (Upstash).**
 - Logo real do marcelo.dev pro `MadeBy`.
 
@@ -173,7 +194,7 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 | 1 | Fundação (scaffold, tema, landing, auth, db) | ✅ |
 | 2 | Núcleo de IA — Create (Prompt IR, pipeline, /app) | ✅ |
 | 3 | Prompt Score UI + Optimize (loop v2, latência) | ✅ |
-| 4 | Organize + Reuse | 🟡 4a+4b (biblioteca, versões, compare, restore) ✅ · 4c (templates) ⬜ |
+| 4 | Organize + Reuse (biblioteca, versões, compare, restore, templates) | ✅ |
 | 5 | Test (Playground) + Billing (Asaas) + rate limit | ⬜ |
 | 6 | Deploy (domínio, Vercel, SEO, página pública de prompt) | ⬜ |
 

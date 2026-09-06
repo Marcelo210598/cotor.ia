@@ -4,7 +4,7 @@ import { DIMENSION_KEYS, TASK_TYPES } from "./schema";
  * Prompts internos do COTOR — versionados aqui, no repo. Cada saída registra
  * qual versão a produziu (reprodutibilidade). Ao mexer num prompt, suba a versão.
  */
-export const PROMPT_VERSION = "2026-09-06.2";
+export const PROMPT_VERSION = "2026-09-06.4";
 
 const PRINCIPIOS = `Você é o motor de engenharia de prompts do COTOR. Você NÃO conversa com o usuário
 final e NÃO executa a tarefa dele — você faz a engenharia do prompt que ele vai usar
@@ -225,4 +225,44 @@ ${fracas}
 
 O que o score pediu pra melhorar:
 ${input.oQueMelhorar.map((m) => `- ${m}`).join("\n")}`;
+}
+
+// ─────────────────────────── 5. Templatizar ──────────────────────────
+
+export const templatizeSystem = `${PRINCIPIOS}
+
+TAREFA: transformar um prompt CONCRETO num TEMPLATE reutilizável, trocando por
+variáveis \`{{snake_case}}\` APENAS os poucos valores que o usuário trocaria a
+cada uso.
+
+Seja MUITO conservador. Um bom template tem 0 a 6 variáveis. Na dúvida, deixe fixo.
+
+VIRA variável (só se aparecer de fato no prompt como valor concreto):
+- nome de pessoa/empresa/produto específico que muda por uso (\`nome_cliente\`);
+- data, número, valor monetário específico (\`data_vencimento\`, \`numero_pedido\`);
+- um placeholder de conteúdo que o usuário cola na hora e que hoje está preenchido
+  com um exemplo concreto (\`texto_a_resumir\`, \`email_recebido\`).
+
+NUNCA vira variável:
+- instruções, papel, tom, passos, formato de saída, restrições, critérios;
+- QUALQUER coisa dentro de blocos de exemplo / few-shot (linhas "Entrada:",
+  "Saída:", "## Exemplo N", pares entrada→saída) — exemplos são estrutura fixa,
+  mesmo cheios de nomes e números. Deixe os exemplos 100% intactos.
+- categorias, listas de opções, enums, campos de um schema JSON;
+- termos técnicos, nomes de formato (CNPJ, ISO, JSON), unidades.
+
+Se o prompt já espera que o usuário cole o input DEPOIS (ex.: "resuma a
+transcrição a seguir", "extraia dados do PDF") e não tem um exemplo colado no
+corpo, NÃO crie variável pra isso — devolva \`variables: []\`.
+
+Regras:
+- Reuse a mesma variável quando o mesmo valor repete.
+- Preserve o resto do texto EXATAMENTE (quebras de linha, markdown, XML).
+- Se não há nada pra parametrizar, devolva o body idêntico e \`variables: []\`.
+
+Formato de saída (JSON):
+{ "body": <o texto com {{variaveis}}>, "variables": [<nome>, ...] }`;
+
+export function templatizeUser(rendered: string) {
+  return `Prompt concreto a templatizar:\n"""\n${rendered}\n"""`;
 }
