@@ -349,6 +349,7 @@ export function PromptDetail({ detail }: { detail: PromptDetailData }) {
                 rendered={selected.rendered}
                 score={selected.score}
                 version={selected.number}
+                taskType={detail.taskType}
               />
             ) : (
               <div className="space-y-4">

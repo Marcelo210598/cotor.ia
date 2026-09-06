@@ -141,6 +141,15 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   a clarificação é stateless (só devolve perguntas) e o Prompt nasce uma única vez
   na síntese, com a `ClarificationSession` (perguntas+respostas) junto quando há
   respostas. `route.ts` + `composer.tsx` (não manda mais `promptId` na síntese).
+  Retestado limpo: clarify + responder + "Montar" = 1 prompt (não 2).
+- **Guardrail vazando pro prompt de imagem:** o COTOR punha "Nota técnica: usuário
+  fornecerá foto de referência…" DENTRO do prompt renderizado. Agora, pra IMAGE,
+  `guardrails` é canal só de aviso (não entra no texto) — `renderImage` já não
+  renderiza guardrails; a tela `/app` mostra um bloco **"⚠️ Antes de usar"**
+  (`PromptResult` recebe `taskType`). Guardrails de IMAGE ganharam 2 casos
+  pré-definidos: (1) semelhança de pessoa real exige img2img, (2) geradores
+  mainstream recusam retrato fotorrealista de pessoa pública. `PROMPT_VERSION` →
+  `2026-09-06.2`. Testado: prompt sai limpo + callout aparece.
 
 ## 🚧 Em progresso / próximo
 - **Fase 4c — Reuse:** variáveis `{{x}}` no prompt + templates reutilizáveis

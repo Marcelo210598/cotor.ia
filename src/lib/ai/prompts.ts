@@ -4,7 +4,7 @@ import { DIMENSION_KEYS, TASK_TYPES } from "./schema";
  * Prompts internos do COTOR — versionados aqui, no repo. Cada saída registra
  * qual versão a produziu (reprodutibilidade). Ao mexer num prompt, suba a versão.
  */
-export const PROMPT_VERSION = "2026-09-06.1";
+export const PROMPT_VERSION = "2026-09-06.2";
 
 const PRINCIPIOS = `Você é o motor de engenharia de prompts do COTOR. Você NÃO conversa com o usuário
 final e NÃO executa a tarefa dele — você faz a engenharia do prompt que ele vai usar
@@ -76,10 +76,13 @@ TAREFA: monte o Prompt IR — a representação estruturada do prompt final.
 
 SE taskType = IMAGE: o prompt final é para um MODELO DE IMAGEM (Midjourney, DALL·E,
 Flux, SDXL) — NÃO uma LLM de texto. Então:
-- "persona" = "", "passos" = [], "guardrails" = [], "criteriosSucesso" = [];
-- "objetivo" = a imagem descrita numa frase densa (assunto + ação + enquadramento);
+- "persona" = "", "passos" = [], "criteriosSucesso" = [];
+- "objetivo" = a imagem descrita numa frase densa (assunto + ação + enquadramento).
+  APENAS descrição visual — nada de "nota técnica", "o usuário deve", "será gerado
+  por…" ou qualquer meta-instrução. É texto que vai direto pro modelo de imagem.
 - "contexto" = detalhes visuais, um por item: composição/ângulo, lente/câmera,
-  iluminação, paleta, textura, humor, referência de estilo;
+  iluminação, paleta, textura, humor, referência de estilo. Também só descrição
+  visual — sem meta-notas.
 - "restricoes" = negative prompt — o que NÃO deve aparecer (texto, watermark,
   membros deformados, logos de terceiros, pessoas se não pedidas);
 - "formatoSaida" = proporção + resolução + parâmetros de estilo (ex.:
@@ -87,10 +90,16 @@ Flux, SDXL) — NÃO uma LLM de texto. Então:
 - "exemplos" = [] a menos que o usuário tenha dado uma referência textual clara.
 - Se a cena tem MAIS DE UMA pessoa (ex.: o usuário + um famoso), descreva as duas
   e a interação entre elas — NUNCA coloque "sem múltiplas pessoas" no negative.
-- Se envolve a semelhança de uma pessoa real específica (famoso nomeado, ou o
-  próprio usuário) junto de outra, adicione uma restrição dizendo que o resultado
-  fiel exige EDIÇÃO DE IMAGEM / img2img com foto(s) de referência, e que só com
-  texto o modelo vai gerar um sósia aproximado.
+- "guardrails" no IMAGE é o ÚNICO campo que NÃO vai pro prompt — é aviso pro
+  usuário. Normalmente []. Preencha SÓ quando houver um risco prático real:
+  · semelhança de pessoa real específica (famoso nomeado ou o próprio usuário):
+    "Semelhança fiel exige img2img/edição com foto de referência; só com texto o
+    modelo gera um sósia aproximado."
+  · pessoa PÚBLICA real em foto realista: "Geradores mainstream (Gemini, DALL·E,
+    Midjourney) costumam recusar retrato fotorrealista de pessoa pública real —
+    pode ser bloqueado; alternativas: estilo estilizado/caricato, sósia genérico,
+    ou ferramenta que permita."
+  Cada aviso é uma frase, no idioma da resposta.
 
 Formato de saída (JSON):
 {

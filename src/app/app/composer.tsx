@@ -198,6 +198,7 @@ export function Composer() {
           score={result.score}
           version={version}
           delta={delta}
+          taskType={result.analysis.taskType}
           onOptimize={optimize}
           optimizing={optimizing}
         />

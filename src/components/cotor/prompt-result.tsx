@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Loader2, Sparkles } from "lucide-react";
+import { Check, Copy, Loader2, Sparkles, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScoreCard } from "@/components/cotor/score-card";
@@ -9,7 +9,7 @@ import type { PromptIR, ScoreResult } from "@/lib/ai/schema";
 
 type Block = { label: string; lines: string[] };
 
-function irBlocks(ir: PromptIR): Block[] {
+function irBlocks(ir: PromptIR, skipGuardrails = false): Block[] {
   const b: Block[] = [];
   if (ir.persona) b.push({ label: "Papel", lines: [ir.persona] });
   b.push({ label: "Objetivo", lines: [ir.objetivo] });
@@ -26,7 +26,8 @@ function irBlocks(ir: PromptIR): Block[] {
     });
   if (ir.criteriosSucesso.length)
     b.push({ label: "Sucesso", lines: ir.criteriosSucesso });
-  if (ir.guardrails.length) b.push({ label: "Se falhar", lines: ir.guardrails });
+  if (!skipGuardrails && ir.guardrails.length)
+    b.push({ label: "Se falhar", lines: ir.guardrails });
   return b;
 }
 
@@ -36,6 +37,7 @@ export function PromptResult({
   score,
   version = 1,
   delta,
+  taskType,
   onOptimize,
   optimizing = false,
 }: {
@@ -44,10 +46,14 @@ export function PromptResult({
   score: ScoreResult;
   version?: number;
   delta?: number;
+  taskType?: string;
   onOptimize?: () => void;
   optimizing?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
+
+  // No IMAGE, guardrails não vão pro prompt — são avisos pro usuário.
+  const warnings = taskType === "IMAGE" ? ir.guardrails : [];
 
   async function copy() {
     try {
@@ -62,6 +68,23 @@ export function PromptResult({
 
   return (
     <div className="space-y-6">
+      {warnings.length > 0 && (
+        <div className="rounded-lg border border-coral/30 bg-coral/[0.06] p-4">
+          <p className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+            <TriangleAlert className="size-4 text-coral" />
+            Antes de usar
+          </p>
+          <ul className="space-y-1.5 text-sm text-foreground/80">
+            {warnings.map((w, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-coral">→</span>
+                {w}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -81,7 +104,7 @@ export function PromptResult({
           <div className="rounded-lg border border-border/70 bg-card/40 p-4">
             <p className="eyebrow mb-3">estrutura</p>
             <dl className="space-y-2.5">
-              {irBlocks(ir).map((block) => (
+              {irBlocks(ir, warnings.length > 0).map((block) => (
                 <div
                   key={block.label}
                   className="grid grid-cols-[76px_1fr] gap-3"
