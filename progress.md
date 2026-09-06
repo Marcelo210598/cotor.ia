@@ -1,6 +1,6 @@
 # COTOR.IA — Progresso
 
-## Última atualização: 2026-09-05
+## Última atualização: 2026-09-06
 
 ## 📌 Visão Geral
 **COTOR.IA = copiloto de engenharia de prompts.** Você diz a intenção crua, o
@@ -86,9 +86,18 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 - **NO AR: `https://cotor-ia.vercel.app`** (projeto `cotor-ia`, team Hobby,
   auto-deploy no push da `main`). Env vars no Vercel (Marcelo importou via
   `.env`). Landing + páginas legais funcionando em produção.
-- 🔴 **PENDENTE: URI de redirecionamento de produção no Google Cloud** —
-  `https://cotor-ia.vercel.app/api/auth/callback/google` não está registrado →
-  login de prod dá `redirect_uri_mismatch`. Localhost OK. **É a 1ª coisa amanhã.**
+- ✅ **06/09 — Login Google em produção 100% resolvido:**
+  - URI de redirect de produção registrado no Google Cloud (client `cotor-ia-local`):
+    origem JS `https://cotor-ia.vercel.app` + redirect
+    `https://cotor-ia.vercel.app/api/auth/callback/google` (localhost mantido).
+  - **Login testado end-to-end pela UI** → `/entrar` → Google → consentimento →
+    `/app` logado. Sem `redirect_uri_mismatch`. Neon confirmou nova session
+    (mesmo user reusado — 2 sessions, 1 account).
+  - `NEXT_PUBLIC_APP_URL` no Vercel prod já estava correto.
+  - **OAuth consent screen PUBLICADA — status "Em produção".** Branding completo
+    (nome, e-mails, domínio autorizado `cotor-ia.vercel.app`, links home/privacidade/
+    termos). Escopos básicos (`email profile openid`) → **sem verificação do Google**.
+    Qualquer usuário Google já loga. Rollback = botão "Voltar para o teste".
 - Hero rotativo: cicla entre imagem / ata de reunião / e-mail de cobrança.
 - `/termos` e `/privacidade` criados (matam 404).
 - Crédito "criado por marcelo.dev" no rodapé do `/app` e da landing
@@ -98,7 +107,6 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   score/pricing/pipeline OK. `/entrar` alinhado ao topo no mobile.
 
 ## 🚧 Em progresso / próximo
-- **AMANHÃ 1º:** URI de redirect prod no Google Cloud → testar login em produção.
 - **Fase 4 — Organize + Reuse:** biblioteca (`/app/prompts`, lista + busca +
   tags), histórico de versões por prompt (árvore v1→v2→…, comparar, restaurar —
   lineage já no schema), variáveis/templates reutilizáveis.

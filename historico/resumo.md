@@ -22,15 +22,23 @@ multi-modelo, diff campo-a-campo e score consistente.
 | Fase | O quê | Status |
 |---|---|---|
 | 1 | Fundação: scaffold, tema, landing, `/entrar`, auth, schema no Neon | ✅ 05/09 |
-| 2 | Núcleo de IA (Create + Optimize) | ⬜ |
-| 3 | Prompt Score | ⬜ |
-| 4 | Organize + Reuse | ⬜ |
-| 5 | Test (Playground) + Billing | ⬜ |
-| 6 | Deploy | ⬜ |
+| 2 | Núcleo de IA — Create (Prompt IR, pipeline `src/lib/ai/`, `/app`) | ✅ 05/09 |
+| 3 | Prompt Score UI + Optimize (loop v2, latência ~20s) | ✅ 05/09 |
+| 4 | Organize + Reuse (biblioteca, versões, templates) | ⬜ |
+| 5 | Test (Playground) + Billing (Asaas) + rate limit | ⬜ |
+| 6 | Deploy (domínio, SEO, página pública de prompt) | 🟡 no ar em `cotor-ia.vercel.app`, falta domínio/SEO |
+
+**NO AR: https://cotor-ia.vercel.app** — landing + `/app` + login Google
+funcionando em produção (testado 06/09).
 
 ## Pendências imediatas
-- Google OAuth (client no Google Cloud) — sem isso não loga.
-- Fase 2: `src/lib/ai/`.
+- Fase 4: `/app/prompts` (biblioteca + busca + tags), histórico de versões, templates.
+- Logo real do marcelo.dev pro `MadeBy` no rodapé.
+
+## Auth (06/09 — resolvido)
+Login Google em produção OK + OAuth consent screen **publicada ("Em produção")**.
+Escopos básicos → sem verificação Google. Client `cotor-ia-local`, projeto GCloud
+`cotor-ia`. Redirects: localhost + `https://cotor-ia.vercel.app/api/auth/callback/google`.
 
 ## Fontes da verdade
 `progress.md` · `historico/AAAA-MM-DD.md` · este arquivo. Repo:
