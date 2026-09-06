@@ -198,10 +198,46 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   (script: limite 2 → 3ª chamada bloqueada). O token do REST = mesmo do TCP.
   Contador "COMMANDS" no dashboard do Upstash sobe conforme uso.
 
-## 🚧 Em progresso / próximo
-- **Fase 5c — Billing (Asaas):** checkout + webhook + downgrade. Sessão dedicada
-  (precisa da API key do Asaas + teste com Pix real).
-- Logo real do marcelo.dev pro `MadeBy`.
+## 🚧 PRÓXIMA SESSÃO — Fase 5c (Billing Asaas)
+
+**Só o plano Pro (R$39/mês) é self-serve.** Team = "falar com a gente" (sem checkout).
+
+### O que o Marcelo precisa fazer (setup Asaas — SANDBOX primeiro)
+1. Criar conta **sandbox**: https://sandbox.asaas.com (é separada da produção).
+2. **Configurações → Integrações → Chave de API** → copiar a key.
+3. Passar a key pro Claude → vira `ASAAS_API_KEY` + `ASAAS_ENV=sandbox` (`.env` + Vercel).
+4. Escolher um token aleatório pro webhook → vira `ASAAS_WEBHOOK_TOKEN`.
+5. **Integrações → Webhooks**: URL `https://cotor-ia.vercel.app/api/webhooks/asaas`,
+   o token do passo 4, eventos de **Cobranças** e **Assinaturas**.
+6. Testar: Claude dispara checkout → Marcelo paga Pix de teste no sandbox →
+   webhook vira ele PRO. Validado → criar conta de produção, flipar `ASAAS_ENV`.
+
+### O que o Claude vai construir
+- **Schema (migration):** `User.asaasCustomerId String?`. `Subscription` já serve
+  (`externalId` = id da assinatura Asaas, `status`, `currentPeriodEnd`).
+- `src/lib/asaas.ts` — cliente (URL por `ASAAS_ENV` sandbox/prod), `getOrCreateCustomer`,
+  `createSubscription`. **Fallback:** sem `ASAAS_API_KEY` → billing desabilitado.
+- `POST /api/billing/checkout` — cria customer + assinatura Pro → devolve `invoiceUrl`
+  do Asaas (página hospedada Pix/boleto/cartão) → front redireciona. Cria `Subscription`
+  status pendente.
+- `POST /api/billing/cancel` — cancela no Asaas, mantém PRO até `currentPeriodEnd`.
+- `POST /api/webhooks/asaas` — valida `asaas-access-token` header ==
+  `ASAAS_WEBHOOK_TOKEN` → `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED` = `user.plan=PRO` +
+  `Subscription ACTIVE` + `currentPeriodEnd`; `PAYMENT_OVERDUE` = `PAST_DUE` (carência);
+  `PAYMENT_REFUNDED`/`SUBSCRIPTION_DELETED` = volta FREE. Sempre responde 200.
+- **`/app/conta`** — plano atual, uso do mês (contadores `UsageEvent`), "Assinar Pro"
+  / "Cancelar assinatura" + data da próxima cobrança. Link "Conta" no header.
+- Landing "Assinar Pro" → checkout se logado, `/entrar?next=/app/conta` se não.
+- 429 (`code: rate_limited`) → link pra `/app/conta`.
+
+### ⚠️ Alinhar limites com o pricing
+Hoje: FREE `cotor` = **20/dia** em `src/lib/ratelimit.ts`. Landing promete **"10
+prompts/mês"**. Alinhar como parte da 5c: FREE `cotor` ~15/mês (janela 30d), Pro
+folgado (300/dia já é ~ilimitado na prática).
+
+## 🚧 Outras pendências
+- Logo real do marcelo.dev pro `MadeBy` (trocar o glifo losango).
+- Fase 6: domínio próprio + SEO + página pública de prompt.
 
 ## ⚠️ Decisões / armadilhas
 - **Prisma 7** tem breaking change (sem `url` no schema, exige `prisma.config.ts`
@@ -220,8 +256,8 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 | 2 | Núcleo de IA — Create (Prompt IR, pipeline, /app) | ✅ |
 | 3 | Prompt Score UI + Optimize (loop v2, latência) | ✅ |
 | 4 | Organize + Reuse (biblioteca, versões, compare, restore, templates) | ✅ |
-| 5 | Test (Playground) + Billing (Asaas) + rate limit | ⬜ |
-| 6 | Deploy (domínio, Vercel, SEO, página pública de prompt) | ⬜ |
+| 5 | Playground ✅ · Rate limit (Upstash) ✅ · Billing Asaas ⬜ | 🟡 |
+| 6 | Deploy (domínio, SEO, página pública de prompt) — no ar, falta domínio | 🟡 |
 
 ## 🔧 Rodar local
 ```bash
