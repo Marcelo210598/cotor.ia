@@ -190,13 +190,15 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   Redis fora do ar → deixa passar e loga.
 - **Plano na sessão:** `auth.ts` ganhou `user.additionalFields.plan` — vem junto
   no `session.user.plan`, usado pelo rate limit.
-- Testado: playground roda (Groq respondeu), IMAGE desabilitado. Rate limit
-  inativo até plugar Upstash.
-- 🔴 **PENDENTE: criar Redis no Upstash** (console.upstash.com, sa-east-1) →
-  Marcelo passa `UPSTASH_REDIS_REST_URL` + `_TOKEN` → põe no `.env` + Vercel.
+- Testado: playground roda (Groq respondeu), IMAGE desabilitado.
+- ✅ **06/09 — Upstash plugado.** Redis `cotor.ia` no Upstash (Free, AWS
+  sa-east-1, host `robust-mongoose-115424.upstash.io`). `UPSTASH_REDIS_REST_URL`
+  + `_TOKEN` no `.env` local e no Vercel Production (via `vercel env add` CLI).
+  Rate limit **ativo em produção**. Testado end-to-end contra o Redis real
+  (script: limite 2 → 3ª chamada bloqueada). O token do REST = mesmo do TCP.
+  Contador "COMMANDS" no dashboard do Upstash sobe conforme uso.
 
 ## 🚧 Em progresso / próximo
-- **Upstash:** plugar as credenciais e testar o 429 de verdade.
 - **Fase 5c — Billing (Asaas):** checkout + webhook + downgrade. Sessão dedicada
   (precisa da API key do Asaas + teste com Pix real).
 - Logo real do marcelo.dev pro `MadeBy`.
