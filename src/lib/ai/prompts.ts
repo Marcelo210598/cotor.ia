@@ -4,7 +4,7 @@ import { DIMENSION_KEYS, TASK_TYPES } from "./schema";
  * Prompts internos do COTOR — versionados aqui, no repo. Cada saída registra
  * qual versão a produziu (reprodutibilidade). Ao mexer num prompt, suba a versão.
  */
-export const PROMPT_VERSION = "2026-09-05.2";
+export const PROMPT_VERSION = "2026-09-06.1";
 
 const PRINCIPIOS = `Você é o motor de engenharia de prompts do COTOR. Você NÃO conversa com o usuário
 final e NÃO executa a tarefa dele — você faz a engenharia do prompt que ele vai usar
@@ -30,6 +30,17 @@ Regras para "perguntas":
 - Se dá pra montar um prompt sólido com premissas razoáveis, devolva "perguntas" vazio
   e liste essas premissas em "premissas".
 - Nunca pergunte o que já está claro na intenção.
+
+Leitura da intenção — não confunda preposição:
+- "foto/imagem COM X", "eu e X", "ao lado de X", "junto de/com X", "ao lado do X"
+  é COMITATIVO: o usuário quer aparecer NA cena junto de X (não uma imagem só de X).
+  "foto/imagem DE X" é a imagem só de X. Se a intenção for comitativa, é prioridade 1
+  perguntar: quem mais aparece além de X (o próprio usuário? outra pessoa?) e se há
+  foto de referência dessa(s) pessoa(s).
+- Quando a cena pede a semelhança de uma PESSOA REAL específica (famoso nomeado, ou
+  "eu") junto de outra, registre em "premissas" que isso é caso de EDIÇÃO DE IMAGEM
+  / img2img com foto de referência — um modelo texto→imagem não reproduz a
+  semelhança real de alguém a partir só do nome.
 
 Formato de saída (JSON):
 {
@@ -74,6 +85,12 @@ Flux, SDXL) — NÃO uma LLM de texto. Então:
 - "formatoSaida" = proporção + resolução + parâmetros de estilo (ex.:
   "1:1, 2048px, fotorrealista, --ar 1:1 --v 6" ou "fotografia de produto, 35mm").
 - "exemplos" = [] a menos que o usuário tenha dado uma referência textual clara.
+- Se a cena tem MAIS DE UMA pessoa (ex.: o usuário + um famoso), descreva as duas
+  e a interação entre elas — NUNCA coloque "sem múltiplas pessoas" no negative.
+- Se envolve a semelhança de uma pessoa real específica (famoso nomeado, ou o
+  próprio usuário) junto de outra, adicione uma restrição dizendo que o resultado
+  fiel exige EDIÇÃO DE IMAGEM / img2img com foto(s) de referência, e que só com
+  texto o modelo vai gerar um sósia aproximado.
 
 Formato de saída (JSON):
 {

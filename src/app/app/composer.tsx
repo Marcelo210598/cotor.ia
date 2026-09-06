@@ -16,7 +16,6 @@ import type {
 
 type ClarifyResponse = {
   stage: "clarify";
-  promptId: string;
   analysis: IntentAnalysis;
 };
 type ResultResponse = {
@@ -70,12 +69,12 @@ export function Composer() {
     try {
       const data = await call({ intent });
       if ("error" in data) throw new Error(data.error);
-      setPromptId(data.promptId);
       if (data.stage === "clarify") {
         setQuestions(data.analysis.perguntas);
         setPremissas(data.analysis.premissas);
         setPhase("clarify");
       } else {
+        setPromptId(data.promptId);
         setResult(data);
         setPhase("result");
       }
@@ -92,7 +91,6 @@ export function Composer() {
     try {
       const data = await call({
         intent,
-        promptId,
         skipQuestions,
         answers: skipQuestions
           ? undefined

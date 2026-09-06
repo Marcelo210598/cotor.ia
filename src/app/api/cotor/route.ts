@@ -12,7 +12,6 @@ export const maxDuration = 60;
 
 const bodySchema = z.object({
   intent: z.string().min(3).max(4000),
-  promptId: z.string().optional(),
   answers: z
     .array(
       z.object({
@@ -48,23 +47,10 @@ export async function POST(req: Request) {
       analysis.perguntas.length > 0 && !body.answers && !body.skipQuestions;
 
     // ── etapa de clarificação ──
+    // Não persiste nada aqui: só devolve as perguntas. O Prompt nasce uma única
+    // vez, na síntese — evita duplicata e prompt órfão se o usuário desiste.
     if (wantsQuestions) {
-      const prompt = await prisma.prompt.create({
-        data: {
-          userId,
-          title: title(analysis),
-          intent: body.intent,
-          taskType: analysis.taskType,
-          clarificationSessions: {
-            create: { questions: analysis.perguntas },
-          },
-        },
-      });
-      return NextResponse.json({
-        stage: "clarify",
-        promptId: prompt.id,
-        analysis,
-      });
+      return NextResponse.json({ stage: "clarify", analysis });
     }
 
     // ── síntese + score ──
@@ -81,7 +67,6 @@ export async function POST(req: Request) {
 
     const promptId = await persist({
       userId,
-      existingId: body.promptId,
       analysis,
       intent: body.intent,
       answers: body.answers,
@@ -119,7 +104,6 @@ function title(a: IntentAnalysis): string {
 
 async function persist(args: {
   userId: string;
-  existingId?: string;
   analysis: IntentAnalysis;
   intent: string;
   answers?: { id: string; pergunta: string; resposta: string }[];
@@ -128,36 +112,25 @@ async function persist(args: {
   target: string;
   score: ScoreResult;
 }): Promise<string> {
-  const prompt = args.existingId
-    ? await prisma.prompt.update({
-        where: { id: args.existingId, userId: args.userId },
-        data: { taskType: args.analysis.taskType, title: title(args.analysis) },
-      })
-    : await prisma.prompt.create({
-        data: {
-          userId: args.userId,
-          title: title(args.analysis),
-          intent: args.intent,
-          taskType: args.analysis.taskType,
+  const hasAnswers = !!args.answers?.length;
+  const prompt = await prisma.prompt.create({
+    data: {
+      userId: args.userId,
+      title: title(args.analysis),
+      intent: args.intent,
+      taskType: args.analysis.taskType,
+      ...(hasAnswers && {
+        clarificationSessions: {
+          create: {
+            questions: args.analysis.perguntas,
+            answers: Object.fromEntries(
+              args.answers!.map((a) => [a.id, a.resposta]),
+            ),
+          },
         },
-      });
-
-  if (args.existingId && args.answers?.length) {
-    const cs = await prisma.clarificationSession.findFirst({
-      where: { promptId: prompt.id },
-      orderBy: { createdAt: "desc" },
-    });
-    if (cs) {
-      await prisma.clarificationSession.update({
-        where: { id: cs.id },
-        data: {
-          answers: Object.fromEntries(
-            args.answers.map((a) => [a.id, a.resposta]),
-          ),
-        },
-      });
-    }
-  }
+      }),
+    },
+  });
 
   await saveVersion({
     promptId: prompt.id,

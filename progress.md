@@ -128,6 +128,20 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 - Build + lint limpos. Testado no navegador: lista, filtros, detalhe, compare,
   restore, arquivar/desarquivar — tudo ok.
 
+## ✅ Ajustes 06/09 (pós-Fase 4)
+- **Preposição "com" vs "de"** no motor: "foto/imagem COM X", "eu e X", "ao lado
+  de X" agora é lido como COMITATIVO (usuário + X na cena) — o motor pergunta quem
+  mais aparece e se há foto de referência, e sinaliza que pessoa real fiel exige
+  img2img/edição. Antes gerava retrato solo de X e ainda punha "sem múltiplas
+  pessoas" no negative. Regras em `prompts.ts` (intent + synth IMAGE),
+  `PROMPT_VERSION` → `2026-09-06.1`. Testado: "uma foto com o neymar" agora
+  pergunta certo.
+- **Bug de prompt duplicado corrigido:** a etapa de clarificação criava um Prompt
+  na hora e a síntese criava outro (+ prompts órfãos se o usuário desistia). Agora
+  a clarificação é stateless (só devolve perguntas) e o Prompt nasce uma única vez
+  na síntese, com a `ClarificationSession` (perguntas+respostas) junto quando há
+  respostas. `route.ts` + `composer.tsx` (não manda mais `promptId` na síntese).
+
 ## 🚧 Em progresso / próximo
 - **Fase 4c — Reuse:** variáveis `{{x}}` no prompt + templates reutilizáveis
   (provável modelo `Template` novo → migration).
