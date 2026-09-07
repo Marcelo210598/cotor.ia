@@ -198,7 +198,7 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   (script: limite 2 → 3ª chamada bloqueada). O token do REST = mesmo do TCP.
   Contador "COMMANDS" no dashboard do Upstash sobe conforme uso.
 
-## ✅ Concluído — Fase 5c (Billing Asaas) — 07/09
+## ✅ Concluído — Fase 5c (Billing Asaas) — 07/09 — TESTADO EM PROD (sandbox)
 
 **Só o plano Pro (R$39/mês) é self-serve.** Team = "falar com a gente" (sem checkout).
 
@@ -253,19 +253,28 @@ FREE virou **cota mensal** (janela 30d): `cotor` 15/mês, optimize/templatize
 PRO/TEAM seguem diários e folgados (300/1000 por dia). Helper `planLimit()`
 exportado (usado pela `/app/conta`).
 
-### Testado
-- **Smoke test real contra o sandbox** (curl): criar customer (CPF/CNPJ ok) →
-  criar assinatura → 1ª cobrança com `invoiceUrl` due hoje (`netValue` 37,74 =
-  taxa ~R$1,26). Dados de teste deletados do sandbox.
+### Testado — FLUXO COMPLETO VALIDADO EM PRODUÇÃO (sandbox) ✅
+- **Fix:** `billingEnabled` era `const` de módulo → Next inlinava `process.env`
+  como undefined no build. Virou função (`apiKey()`/`baseUrl()`/`billingEnabled()`
+  leem em runtime).
+- Login → `/app/conta` → CPF → "Assinar Pro" → fatura Asaas (Pix QR) gerada →
+  pagamento confirmado via API sandbox (`POST /payments/{id}/receiveInCash`) →
+  **webhook virou o user PRO** (`plan=PRO`, `Subscription ACTIVE`,
+  `currentPeriodEnd=2026-10-07`). Tela mostrou "Plano Pro · ativo".
 - `npm run build` + `tsc` + `eslint` limpos.
 
 ### Setup Asaas — estado
-- **Sandbox:** conta criada, `ASAAS_API_KEY` (hmlg) + `ASAAS_ENV=sandbox` +
-  `ASAAS_WEBHOOK_TOKEN` (`cotor_wh_5dd1abef…`) no `.env` local.
-- ⬜ **Falta:** env vars no Vercel prod · cadastrar o Webhook no painel Asaas
-  (URL `https://cotor-ia.vercel.app/api/webhooks/asaas`, mesmo token, eventos de
-  Cobranças + Assinaturas) · pagar 1 Pix de teste e confirmar que vira PRO ·
-  depois: conta de produção + flipar `ASAAS_ENV=production` + key de prod.
+- **Sandbox:** conta criada. `ASAAS_ENV=sandbox` + `ASAAS_API_KEY` (hmlg) +
+  `ASAAS_WEBHOOK_TOKEN` (`cotor_wh_5dd1abef…`) no `.env` local **e no Vercel prod**.
+- **Webhook cadastrado** no painel sandbox (COTOR.IA, todos os eventos de
+  Cobranças, token conferido). Respondendo 200.
+- ⚠️ **Conta do Marcelo já está PRO no Neon** (do teste). Neon é o mesmo banco de
+  prod → em produção ele já aparece PRO sem ter pago em real. É a conta dele,
+  tudo bem — mas se quiser resetar: `UPDATE user SET plan='FREE'` + apagar a
+  Subscription.
+- ⬜ **Falta pra modo real:** criar/usar conta **de produção** Asaas (o Marcelo
+  já tem uma aprovada) → API key de produção → `ASAAS_ENV=production` no Vercel →
+  re-deploy → cadastrar webhook de produção (mesma URL, mesmo token).
 
 ## 🚧 Outras pendências
 - Logo real do marcelo.dev pro `MadeBy` (trocar o glifo losango).
