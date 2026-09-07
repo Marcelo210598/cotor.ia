@@ -134,6 +134,26 @@ export async function createSubscription(args: {
   return { id: sub.id };
 }
 
+/**
+ * Troca o plano de uma assinatura existente (Starter↔Pro). Muda o valor no
+ * Asaas e propaga pras cobranças ainda não pagas. Sem cancelar/recriar — evita
+ * cobrar o mês de novo. A cobrança do novo valor vale a partir do próximo ciclo.
+ */
+export async function updateSubscriptionPlan(
+  subscriptionId: string,
+  plan: PaidPlan,
+): Promise<void> {
+  const { price, label } = PLANS[plan];
+  await call(`/subscriptions/${subscriptionId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      value: price,
+      description: `COTOR.IA — plano ${label} (assinatura mensal)`,
+      updatePendingPayments: true,
+    }),
+  });
+}
+
 type AsaasPayment = {
   id: string;
   invoiceUrl?: string;
@@ -157,6 +177,19 @@ export async function getFirstInvoiceUrl(
     await new Promise((r) => setTimeout(r, 700));
   }
   return null;
+}
+
+/** URL da fatura em aberto (pendente ou vencida) da assinatura — pra dunning. */
+export async function getOpenInvoiceUrl(
+  subscriptionId: string,
+): Promise<string | null> {
+  const list = await call<{ data: AsaasPayment[] }>(
+    `/subscriptions/${subscriptionId}/payments?limit=10&sort=dueDate&order=desc`,
+  ).catch(() => null);
+  const open = list?.data?.find(
+    (p) => p.status === "PENDING" || p.status === "OVERDUE",
+  );
+  return open?.invoiceUrl ?? null;
 }
 
 export async function getSubscription(

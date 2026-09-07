@@ -28,9 +28,9 @@ const PERKS: Record<PaidPlan, string[]> = {
     "Todos os modelos-alvo",
   ],
   PRO: [
-    "Geração praticamente ilimitada",
-    "Tudo do Starter, sem teto de volume",
-    "Biblioteca com pastas e tags",
+    "Geração praticamente ilimitada (300/dia)",
+    "Tudo do Starter, sem cota mensal",
+    "Otimização e Playground sem trava",
   ],
 };
 
@@ -81,6 +81,7 @@ export function ContaClient({
   const [cpf, setCpf] = useState("");
   const [loadingPlan, setLoadingPlan] = useState<PaidPlan | null>(null);
   const [canceling, setCanceling] = useState(false);
+  const [loadingInvoice, setLoadingInvoice] = useState(false);
 
   const isPaid = plan === "STARTER" || plan === "PRO" || plan === "TEAM";
   const pending = subscription?.status === "PENDING";
@@ -109,10 +110,35 @@ export function ContaClient({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Falhou");
+      if (data.switched) {
+        toast.success(
+          `Plano trocado pro ${data.plan === "PRO" ? "Pro" : "Starter"}. O novo valor entra na próxima cobrança.`,
+        );
+        router.refresh();
+        setLoadingPlan(null);
+        return;
+      }
       window.location.assign(data.invoiceUrl);
     } catch (e) {
       toast.error((e as Error).message);
       setLoadingPlan(null);
+    }
+  }
+
+  async function openInvoice() {
+    setLoadingInvoice(true);
+    try {
+      const res = await fetch("/api/billing/invoice");
+      const data = await res.json();
+      if (data.invoiceUrl) {
+        window.open(data.invoiceUrl, "_blank", "noopener");
+      } else {
+        toast.error("Não achei uma fatura em aberto. Tenta pelo e-mail do Asaas.");
+      }
+    } catch {
+      toast.error("Falhou. Tenta de novo.");
+    } finally {
+      setLoadingInvoice(false);
     }
   }
 
@@ -175,11 +201,24 @@ export function ContaClient({
             {canceled
               ? `Assinatura cancelada. Acesso ${PLAN_LABEL[plan]} até ${fmtDate(subscription?.currentPeriodEnd ?? null)}.`
               : pastDue
-                ? "O último pagamento não entrou. Regularize a fatura no Asaas pra não perder o acesso."
+                ? "O último pagamento não entrou. Regularize a fatura pra não perder o acesso."
                 : plan === "TEAM"
                   ? "Plano Team. Pra mudar, fala com a gente."
                   : `Próxima cobrança em ${fmtDate(subscription?.currentPeriodEnd ?? null)}.`}
           </p>
+        )}
+
+        {pastDue && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={openInvoice}
+            disabled={loadingInvoice}
+          >
+            {loadingInvoice && <Loader2 className="size-3.5 animate-spin" />}
+            Abrir fatura pra pagar
+          </Button>
         )}
 
         {(plan === "FREE" || plan === "STARTER") && (

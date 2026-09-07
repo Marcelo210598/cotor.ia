@@ -111,3 +111,27 @@ export async function rateLimit(
     return null;
   }
 }
+
+/**
+ * Rate limit simples e independente de plano pra ações de billing — impede
+ * spammar `/api/billing/checkout` (cada chamada cria cliente + assinatura no
+ * Asaas). `true` = bloqueado.
+ */
+let billingLimiter: Ratelimit | null = null;
+
+export async function billingRateLimited(userId: string): Promise<boolean> {
+  if (!redis) return false;
+  billingLimiter ??= new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(8, "1 h"),
+    prefix: "cotor:rl:billing",
+    analytics: false,
+  });
+  try {
+    const { success } = await billingLimiter.limit(userId);
+    return !success;
+  } catch (err) {
+    console.error("[ratelimit:billing]", err);
+    return false;
+  }
+}

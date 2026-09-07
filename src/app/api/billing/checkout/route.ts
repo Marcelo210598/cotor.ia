@@ -4,10 +4,12 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isValidCpfCnpj } from "@/lib/billing";
+import { billingRateLimited } from "@/lib/ratelimit";
 import {
   billingEnabled,
   getOrCreateCustomer,
   createSubscription,
+  updateSubscriptionPlan,
   getFirstInvoiceUrl,
   cancelSubscription,
   AsaasError,
@@ -45,6 +47,13 @@ export async function POST(req: Request) {
   }
 
   const userId = session.user.id;
+  if (await billingRateLimited(userId)) {
+    return NextResponse.json(
+      { error: "Muitas tentativas. Espera alguns minutos." },
+      { status: 429 },
+    );
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -72,6 +81,37 @@ export async function POST(req: Request) {
     );
   }
 
+  // ── troca de plano numa assinatura já ativa (Starter↔Pro) ──
+  // Muda só o valor no Asaas (sem cancelar/recriar = sem cobrar o mês de novo).
+  // O novo plano vale já; o novo preço entra no próximo ciclo.
+  const sub = user.subscription;
+  if (
+    (user.plan === "STARTER" || user.plan === "PRO") &&
+    sub?.status === "ACTIVE" &&
+    sub.externalId
+  ) {
+    try {
+      await updateSubscriptionPlan(sub.externalId, body.plan);
+      await prisma.$transaction([
+        prisma.user.update({ where: { id: userId }, data: { plan: body.plan } }),
+        prisma.subscription.update({
+          where: { userId },
+          data: { plan: body.plan },
+        }),
+      ]);
+      return NextResponse.json({ switched: true, plan: body.plan });
+    } catch (err) {
+      if (err instanceof AsaasError) {
+        return NextResponse.json({ error: err.message }, { status: 502 });
+      }
+      console.error("[billing/checkout] switch:", err);
+      return NextResponse.json(
+        { error: "Não deu pra trocar de plano. Tenta de novo." },
+        { status: 500 },
+      );
+    }
+  }
+
   const cpf = body.cpfCnpj.replace(/\D/g, "");
 
   try {
@@ -88,14 +128,17 @@ export async function POST(req: Request) {
       data: { cpfCnpj: cpf, asaasCustomerId: customerId },
     });
 
-    // limpa a assinatura anterior — pendente (voltou pro checkout) ou troca de
-    // plano (Starter↔Pro). O acesso atual só cai quando o pgto novo confirmar.
-    const prev = user.subscription;
-    if (prev?.externalId) {
-      await cancelSubscription(prev.externalId).catch(() => {});
+    // limpa a assinatura anterior — pendente (voltou pro checkout) ou cancelada.
+    // O acesso atual só cai quando o pgto novo confirmar.
+    if (sub?.externalId) {
+      await cancelSubscription(sub.externalId).catch(() => {});
     }
 
-    const sub = await createSubscription({ customerId, userId, plan: body.plan });
+    const newSub = await createSubscription({
+      customerId,
+      userId,
+      plan: body.plan,
+    });
 
     await prisma.subscription.upsert({
       where: { userId },
@@ -104,18 +147,18 @@ export async function POST(req: Request) {
         plan: body.plan,
         status: "PENDING",
         provider: "asaas",
-        externalId: sub.id,
+        externalId: newSub.id,
       },
       update: {
         plan: body.plan,
         status: "PENDING",
         provider: "asaas",
-        externalId: sub.id,
+        externalId: newSub.id,
         currentPeriodEnd: null,
       },
     });
 
-    const invoiceUrl = await getFirstInvoiceUrl(sub.id);
+    const invoiceUrl = await getFirstInvoiceUrl(newSub.id);
     if (!invoiceUrl) {
       // assinatura existe, só a fatura não materializou ainda — raro
       return NextResponse.json(

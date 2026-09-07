@@ -38,28 +38,14 @@ const PLANS = [
     cadence: "/mês",
     tagline: "Pra quem escreve prompt todo dia.",
     features: [
-      "Prompts ilimitados",
-      "Tudo do Starter, sem teto de volume",
-      "Biblioteca com pastas e tags",
+      "Geração praticamente ilimitada (300/dia)",
+      "Tudo do Starter, sem cota mensal",
+      "Otimização e Playground sem trava",
+      "Biblioteca com busca, tags e versões",
     ],
     cta: "Assinar Pro",
     href: "/entrar?next=/app/conta",
     highlight: true,
-  },
-  {
-    name: "Team",
-    price: "R$149",
-    cadence: "/mês",
-    tagline: "Pra time com padrão de prompt.",
-    features: [
-      "Tudo do Pro",
-      "Biblioteca compartilhada e papéis",
-      "Testes de regressão de prompt",
-      "Acesso via API",
-    ],
-    cta: "Falar com a gente",
-    href: "/entrar",
-    highlight: false,
   },
 ];
 
@@ -71,7 +57,8 @@ export function Pricing() {
         <h2 className="mt-4 text-3xl sm:text-4xl">
           Preço proporcional ao uso.
         </h2>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-4 sm:grid-cols-3">
+          {/* Team virá quando existir de verdade — hoje é Free / Starter / Pro */}
           {PLANS.map((plan) => (
             <div
               key={plan.name}

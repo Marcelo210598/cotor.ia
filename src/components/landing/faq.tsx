@@ -28,7 +28,7 @@ export const FAQ_ITEMS: { q: string; a: string }[] = [
   },
   {
     q: "Quanto custa o COTOR.IA?",
-    a: "O plano Free é grátis para sempre, com 7 prompts por mês. O Starter custa R$19,90/mês (50 prompts, otimização e Playground liberados). O Pro custa R$39/mês, com geração praticamente ilimitada. O plano Team é sob consulta.",
+    a: "O plano Free é grátis para sempre, com 7 prompts por mês. O Starter custa R$19,90/mês (50 prompts, otimização e Playground liberados). O Pro custa R$39/mês, com geração praticamente ilimitada (300 por dia).",
   },
 ];
 

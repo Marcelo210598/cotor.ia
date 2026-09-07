@@ -328,6 +328,30 @@ cruzava o continente (~120ms), e `getSession` batia no banco em todo request
   (título + "Prompt Score X/100 · grade").
 - **Sem domínio próprio** — decisão do Marcelo, adiado.
 
+## ✅ Ajustes de planos (07/09 noite)
+Achados ao revisar o que faltava nos planos:
+- **Rate limit no checkout:** `billingRateLimited(userId)` em `ratelimit.ts`
+  (8/hora, independente de plano) → `/api/billing/checkout` 429 se spammar.
+- **Troca de plano sem cobrar de novo:** se já tem assinatura ACTIVE e pede outro
+  plano, `updateSubscriptionPlan()` faz `PUT /v3/subscriptions/{id}` (muda só o
+  `value`, `updatePendingPayments:true`) — sem cancelar/recriar. `user.plan` muda
+  já; o preço novo entra no próximo ciclo. Rota devolve `{switched:true}`, front
+  não redireciona.
+- **Landing limpa:** **Team removido** (features não existiam, sem fluxo de compra;
+  volta quando existir). Grid 3 colunas. Pro perdeu "biblioteca com pastas" (não
+  existe — `Project` tá no schema mas sem UI); features do Pro agora reais.
+  FAQ e `conta-client` PERKS atualizados. `Plan.TEAM` fica no enum (comp manual).
+- **Dunning:** `/app/conta` em PAST_DUE mostra "Abrir fatura pra pagar" →
+  `GET /api/billing/invoice` (`getOpenInvoiceUrl` pega a fatura PENDING/OVERDUE).
+- **cookieCache 300s → 60s** — corta o round-trip mas reduz o lag do `plan` na
+  sessão após upgrade.
+
+### Ainda falta nos planos (não feito)
+- E-mails do lado do COTOR (welcome/renovação/falha/cancelamento) — só Asaas hoje.
+- Histórico de faturas em `/app/conta`.
+- Aviso "usou 6 de 7" antes do 429.
+- Plano anual / desconto. Plano Team de verdade. Pastas (`Project`) na biblioteca.
+
 ## 🚧 Outras pendências
 - Logo real do marcelo.dev pro `MadeBy` (trocar o glifo losango).
 - Fase 6: domínio próprio + SEO + página pública de prompt.
