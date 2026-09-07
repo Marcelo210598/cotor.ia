@@ -29,19 +29,31 @@ multi-modelo, diff campo-a-campo e score consistente.
 | 5a | Playground (`/api/playground` + `PlaygroundPanel`, roda o prompt num modelo real) | ✅ |
 | 5b | Rate limit Upstash (429 por plano) — **ativo em prod** | ✅ |
 | 5c | Billing Asaas — Starter R$19,90 + Pro R$39, Pix, `/app/conta`, webhook, cron de expiração | ✅ **EM PRODUÇÃO** |
-| 6 | Domínio próprio + SEO + página pública de prompt | 🟡 no ar, falta domínio |
+| 6 | SEO + GEO + página pública de prompt (`/p/[id]`) | ✅ (sem domínio próprio por ora) |
 
 **NO AR: https://cotor-ia.vercel.app** — login Google, rate limit, **billing Asaas
 em produção** (`ASAAS_ENV=production`). Planos: Free 7/mês · Starter R$19,90
 (50/mês) · Pro R$39 · Team. Fluxo pagamento→webhook→upgrade validado no sandbox.
 Cron diário `billing-sweep` derruba pra FREE no fim do ciclo.
 
+## Estado 07/09 (fim)
+- **5c EM PRODUÇÃO e validada** — checkout Starter R$19,90 real → "receber em
+  dinheiro" no Asaas prod → webhook → user STARTER. Marcelo tá STARTER (do teste).
+- **Perf:** função movida pra `gru1` (SP, do lado do Neon) + cookieCache de
+  sessão + `getSession()` deduplicado + `loading.tsx`. Navegação bem mais rápida.
+- **Fase 6:** `robots.ts` · `sitemap.ts` (inclui prompts públicos) ·
+  `opengraph-image.tsx` (marca) · JSON-LD (WebSite + SoftwareApplication +
+  FAQPage) · seção FAQ na landing · `public/llms.txt` (GEO) · **página pública
+  `/p/[id]`** (toggle "Compartilhar" no detalhe do prompt, OG por prompt com o
+  score, CTA "fazer o meu").
+
 ## PRÓXIMA SESSÃO
-- Fechar a 5c: 1 teste de pagamento real (ou "receber em dinheiro" no painel
-  Asaas de produção) → confirmar upgrade automático.
-- Fase 6: domínio próprio + SEO + página pública de prompt compartilhável.
-- Logo real do marcelo.dev (trocar o glifo losango do `MadeBy`).
-- Team ainda sem fluxo (CTA "Falar com a gente" → `/entrar`; falta e-mail/form).
+- Logo real do marcelo.dev (trocar glifo do `MadeBy`).
+- Team sem fluxo (CTA → `/entrar`; falta e-mail/form).
+- Domínio próprio (adiado por decisão do Marcelo).
+- Opcional: cachear `/p/[id]` com `unstable_cache` (hoje é dinâmico, mas rápido).
+- Corrigir o site "vida-de-trader.vercel.app" que aparece na fatura Asaas (config
+  da conta de produção, compartilhada).
 
 ## Infra plugada
 - **Neon** Postgres `neondb` (org Vercel). Prisma 6.19.3.

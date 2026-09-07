@@ -295,6 +295,39 @@ Helper `planLimit()` exportado. Mensagem 429 é window-aware (mês vs dia).
 - ⬜ **Falta:** 1 teste de pagamento real (ou "receber em dinheiro" no painel de
   prod) pra fechar. Taxa real ~R$1/transação Pix.
 
+## ✅ Concluído — perf + Fase 6 (07/09 noite)
+
+### Perf — navegação estava lenta (~500ms+ congelado)
+Causa: função Vercel em `iad1` (EUA), Neon em `sa-east-1` (SP) → cada query
+cruzava o continente (~120ms), e `getSession` batia no banco em todo request
+(layout + página).
+- **`vercel.json` → `regions: ["gru1"]`** — função em SP, do lado do banco.
+- **`auth.ts` → `session.cookieCache` (5min)** — `getSession` lê cookie assinado,
+  não o banco. (Lag de até 5min no `plan` da sessão; `/app/conta` lê direto do DB.)
+- **`src/lib/session.ts` → `getSession()` com React `cache()`** — dedup layout+página.
+  Todas as páginas do `/app` migradas pra ele.
+- **`src/app/app/loading.tsx`** — skeleton instantâneo na navegação.
+
+### Fase 6 — SEO + GEO + página pública
+- `src/app/robots.ts` (bloqueia `/app`, `/api`, `/entrar`), `src/app/sitemap.ts`
+  (landing + legais + `/p/[id]` públicos, ISR 1h).
+- `src/app/opengraph-image.tsx` — OG dinâmica da marca (Satori: todo `<div>` com
+  >1 filho precisa `display:flex` explícito, sem `<br>`).
+- `src/components/site/structured-data.tsx` — JSON-LD na landing: `WebSite` +
+  `SoftwareApplication` (offers Free/Starter/Pro) + `FAQPage`.
+- `src/components/landing/faq.tsx` — seção FAQ visível (7 Q&A factuais). `FAQ_ITEMS`
+  é a fonte única (alimenta o schema também). Link "FAQ" no header.
+- `public/llms.txt` — descrição estruturada pra IA de busca (GEO).
+- **Prompt público:** `Prompt.public` + `@@index` (db push). Toggle "Compartilhar"
+  no `/app/prompts/[id]` (`prompt-detail.tsx`) + link `/p/[id]` copiável. PATCH
+  `/api/prompts/[id]` aceita `public`. `getPublicPrompt(id)` / `listPublicPromptIds()`
+  em `queries.ts`.
+- **`/p/[id]`** (`src/app/p/[id]/page.tsx`, revalidate 3600) — view read-only:
+  `PromptResult` (prompt + IR + score) + CTA "fazer o meu". Usa o RootLayout
+  (não o do `/app`). `src/app/p/[id]/opengraph-image.tsx` — OG por prompt
+  (título + "Prompt Score X/100 · grade").
+- **Sem domínio próprio** — decisão do Marcelo, adiado.
+
 ## 🚧 Outras pendências
 - Logo real do marcelo.dev pro `MadeBy` (trocar o glifo losango).
 - Fase 6: domínio próprio + SEO + página pública de prompt.
