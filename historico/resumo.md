@@ -30,30 +30,35 @@ multi-modelo, diff campo-a-campo e score consistente.
 | 5b | Rate limit Upstash (429 por plano) — **ativo em prod** | ✅ |
 | 5c | Billing Asaas — Starter R$19,90 + Pro R$39, Pix, `/app/conta`, webhook, cron de expiração | ✅ **EM PRODUÇÃO** |
 | 6 | SEO + GEO + página pública de prompt (`/p/[id]`) | ✅ (sem domínio próprio por ora) |
+| 7 | Galeria de prompts prontos por categoria (feature do Pro) | 🟡 31/45 (Groq bateu limite diário) |
 
-**NO AR: https://cotor-ia.vercel.app** — login Google, rate limit, **billing Asaas
-em produção** (`ASAAS_ENV=production`). Planos: Free 7/mês · Starter R$19,90
-(50/mês) · Pro R$39 · Team. Fluxo pagamento→webhook→upgrade validado no sandbox.
-Cron diário `billing-sweep` derruba pra FREE no fim do ciclo.
+**NO AR: https://cotor-ia.vercel.app** — Fases 1–7 em produção. Planos: Free 7/mês
+· Starter R$19,90 (50/mês) · Pro R$39 (300/dia) · Team (só CTA). Billing Asaas
+`ASAAS_ENV=production`, fluxo pagamento→webhook→upgrade **validado real**. Cron
+diário `billing-sweep` derruba pra FREE no fim do ciclo.
 
-## Estado 07/09 (fim)
-- **5c EM PRODUÇÃO e validada** — checkout Starter R$19,90 real → "receber em
-  dinheiro" no Asaas prod → webhook → user STARTER. Marcelo tá STARTER (do teste).
-- **Perf:** função movida pra `gru1` (SP, do lado do Neon) + cookieCache de
-  sessão + `getSession()` deduplicado + `loading.tsx`. Navegação bem mais rápida.
-- **Fase 6:** `robots.ts` · `sitemap.ts` (inclui prompts públicos) ·
-  `opengraph-image.tsx` (marca) · JSON-LD (WebSite + SoftwareApplication +
-  FAQPage) · seção FAQ na landing · `public/llms.txt` (GEO) · **página pública
-  `/p/[id]`** (toggle "Compartilhar" no detalhe do prompt, OG por prompt com o
-  score, CTA "fazer o meu").
+## Estado 07/09 (fim do dia)
+- **5c em produção e validada** (checkout Starter R$19,90 real → webhook → STARTER).
+- **Ajustes de planos:** rate limit no checkout · troca Starter↔Pro sem cobrar de
+  novo (`PUT` muda o valor) · Team tirado da landing · dunning "Abrir fatura".
+- **Perf:** função em `gru1` (SP, do lado do Neon) + cookieCache 60s +
+  `getSession()` deduplicado + `loading.tsx`.
+- **Fase 6:** robots/sitemap/OG dinâmica/JSON-LD/FAQ/`llms.txt` + página pública
+  `/p/[id]` (toggle "Compartilhar", OG por prompt).
+- **Fase 7:** `/app/galeria` (Pro-only) + `scripts/seed-gallery.ts` (força
+  taskType) + `POST /api/gallery/fork` (clone zero-LLM). **31/45 prompts.**
+- **Logo marcelo.dev feita** (glifo do `MadeBy`).
+- **Marcelo agora está PRO** (comp no Neon; assinatura segue STARTER R$19,90).
 
-## PRÓXIMA SESSÃO
-- Logo real do marcelo.dev (trocar glifo do `MadeBy`).
-- Team sem fluxo (CTA → `/entrar`; falta e-mail/form).
-- Domínio próprio (adiado por decisão do Marcelo).
-- Opcional: cachear `/p/[id]` com `unstable_cache` (hoje é dinâmico, mas rápido).
-- Corrigir o site "vida-de-trader.vercel.app" que aparece na fatura Asaas (config
-  da conta de produção, compartilhada).
+## 🚧 PRÓXIMA SESSÃO (amanhã)
+1. **Completar a Galeria** (falta IMAGE 5 + AGENT 5 + CONVERSATION 3 + GEN 1):
+   `FRESH=1 npx tsx --env-file=.env scripts/seed-gallery.ts` depois das 21h BRT
+   (Groq reseta o limite diário à meia-noite UTC). Detalhe em `historico/2026-09-07.md`.
+2. Testar Galeria e troca de plano pela UI.
+3. E-mails do COTOR (welcome/renovação/falha/cancelamento).
+4. Histórico de faturas no `/app/conta` · aviso antes do 429 · fluxo do Team ·
+   pastas na biblioteca · site na fatura Asaas ("vida-de-trader.vercel.app").
+5. Opcional: `unstable_cache` no `/p/[id]`; `SCORE_SAMPLES=3` quando Groq for pago.
 
 ## Infra plugada
 - **Neon** Postgres `neondb` (org Vercel). Prisma 6.19.3.

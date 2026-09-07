@@ -1,6 +1,12 @@
 # COTOR.IA — Progresso
 
-## Última atualização: 2026-09-07
+## Última atualização: 2026-09-07 (fim do dia)
+
+> ⚠️ **AMANHÃ — completar a Galeria.** Estão 31/45 prompts; o Groq bateu o limite
+> diário de tokens. Depois das 21h BRT (reset), rodar:
+> `FRESH=1 npx tsx --env-file=.env scripts/seed-gallery.ts`
+> Faltam: IMAGE (5), AGENT (5), CONVERSATION (3), "Descrição de produto" (GEN 1).
+> Passo a passo em `historico/2026-09-07.md`.
 
 ## 📌 Visão Geral
 **COTOR.IA = copiloto de engenharia de prompts.** Você diz a intenção crua, o
@@ -355,7 +361,7 @@ Achados ao revisar o que faltava nos planos:
 ## ✅ Fase 7 — Galeria de prompts (07/09) — feature do Pro
 
 - **Schema:** `Prompt.featured` + `@@index` (db push).
-- **Seed** `.dev/seed-gallery.ts` — 45 itens `{title, intent, tt}`. Roda a
+- **Seed** `scripts/seed-gallery.ts` — 45 itens `{title, intent, tt}`. Roda a
   intenção pelo **motor real** (analyze → synthesize → score) mas **força o
   `taskType`** (o analyzer joga quase tudo em GENERATION, e IMAGE só renderiza
   certo com a categoria certa). Grava como `featured` do usuário-sistema
@@ -364,7 +370,7 @@ Achados ao revisar o que faltava nos planos:
 - ⚠️ **07/09: seed parou em 31/45** — o Groq bateu o limite DIÁRIO (200k tokens)
   com o uso do dia. Faltam **IMAGE (5)** e **AGENT (5)** + "Descrição de produto"
   (GEN) + 3 de CONVERSATION. As de IMAGE que tinham vindo com taskType errado
-  foram apagadas. **Re-rodar `FRESH=1 npx tsx --env-file=.env .dev/seed-gallery.ts`
+  foram apagadas. **Re-rodar `FRESH=1 npx tsx --env-file=.env scripts/seed-gallery.ts`
   quando o Groq resetar (meia-noite UTC ≈ 21h BRT).**
 - **`listFeaturedPrompts()`** (agrupa por taskType) + **`getFeaturedForFork(id)`**
   em `queries.ts`.
