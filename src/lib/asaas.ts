@@ -8,7 +8,12 @@
 // funções lançam. As rotas checam isso antes de chamar.
 
 function apiKey(): string {
-  return process.env.ASAAS_API_KEY || "";
+  // A chave do Asaas começa com "$". Em `.env` (dotenv-expand) e na Vercel o "$"
+  // vira "referência a outra variável" e some. Guardamos SEM o "$" e recolocamos
+  // aqui. (Aceita com "$" também, se algum ambiente não mexer.)
+  const raw = (process.env.ASAAS_API_KEY || "").trim();
+  if (!raw) return "";
+  return raw.startsWith("$") ? raw : `$${raw}`;
 }
 
 function baseUrl(): string {
