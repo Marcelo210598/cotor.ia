@@ -164,6 +164,7 @@ model Prompt {
   tags      String[]     @default([])
   archived  Boolean      @default(false)
   public    Boolean      @default(false) // visível em /p/[id] sem login
+  featured  Boolean      @default(false) // entra na Galeria (feature do Pro)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -174,6 +175,7 @@ model Prompt {
   @@index([userId])
   @@index([projectId])
   @@index([public])
+  @@index([featured])
   @@map("prompt")
 }
 

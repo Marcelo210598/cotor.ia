@@ -29,8 +29,8 @@ const PERKS: Record<PaidPlan, string[]> = {
   ],
   PRO: [
     "Geração praticamente ilimitada (300/dia)",
+    "Galeria de prompts prontos por categoria",
     "Tudo do Starter, sem cota mensal",
-    "Otimização e Playground sem trava",
   ],
 };
 

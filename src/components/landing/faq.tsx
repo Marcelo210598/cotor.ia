@@ -27,6 +27,10 @@ export const FAQ_ITEMS: { q: string; a: string }[] = [
     a: "Groq (gpt-oss-120b) para análise e pontuação, e Claude Haiku 4.5 para a síntese e a otimização. O Playground roda o seu prompt num desses modelos reais para você ver a saída.",
   },
   {
+    q: "Tem prompts prontos pra usar?",
+    a: "Sim. O plano Pro inclui a Galeria: dezenas de prompts profissionais organizados por categoria de tarefa (geração, análise, extração, reescrita, código, criativo, imagem, conversa, agente), todos já estruturados e pontuados pelo COTOR. Você copia direto ou usa como base pra sua versão, sem gastar geração.",
+  },
+  {
     q: "Quanto custa o COTOR.IA?",
     a: "O plano Free é grátis para sempre, com 7 prompts por mês. O Starter custa R$19,90/mês (50 prompts, otimização e Playground liberados). O Pro custa R$39/mês, com geração praticamente ilimitada (300 por dia).",
   },

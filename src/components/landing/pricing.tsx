@@ -40,8 +40,8 @@ const PLANS = [
     features: [
       "Geração praticamente ilimitada (300/dia)",
       "Tudo do Starter, sem cota mensal",
+      "Galeria de prompts prontos por categoria",
       "Otimização e Playground sem trava",
-      "Biblioteca com busca, tags e versões",
     ],
     cta: "Assinar Pro",
     href: "/entrar?next=/app/conta",

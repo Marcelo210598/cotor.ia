@@ -126,6 +126,76 @@ export async function getPromptDetail(
   };
 }
 
+export type GalleryItem = {
+  id: string;
+  title: string;
+  taskType: TaskType;
+  rendered: string;
+  score: { overall: number; grade: string } | null;
+};
+
+/** Prompts da Galeria (featured), agrupados por categoria. */
+export async function listFeaturedPrompts(): Promise<
+  { taskType: TaskType; items: GalleryItem[] }[]
+> {
+  const rows = await prisma.prompt.findMany({
+    where: { featured: true, archived: false },
+    orderBy: { createdAt: "asc" },
+    include: {
+      versions: {
+        orderBy: { number: "desc" },
+        take: 1,
+        include: { scores: { orderBy: { createdAt: "desc" }, take: 1 } },
+      },
+    },
+  });
+
+  const byType = new Map<TaskType, GalleryItem[]>();
+  for (const p of rows) {
+    const v = p.versions[0];
+    if (!v) continue;
+    const s = v.scores[0];
+    const tt = p.taskType as TaskType;
+    if (!byType.has(tt)) byType.set(tt, []);
+    byType.get(tt)!.push({
+      id: p.id,
+      title: p.title,
+      taskType: tt,
+      rendered: v.rendered,
+      score: s ? { overall: s.overall, grade: s.grade } : null,
+    });
+  }
+
+  return [...byType.entries()]
+    .map(([taskType, items]) => ({ taskType, items }))
+    .sort((a, b) => b.items.length - a.items.length);
+}
+
+/** Um prompt featured pra clonar — head version completa. `null` se não é featured. */
+export async function getFeaturedForFork(id: string) {
+  const p = await prisma.prompt.findFirst({
+    where: { id, featured: true },
+    include: {
+      versions: {
+        orderBy: { number: "desc" },
+        take: 1,
+        include: { scores: { orderBy: { createdAt: "desc" }, take: 1 } },
+      },
+    },
+  });
+  const v = p?.versions[0];
+  if (!p || !v) return null;
+  return {
+    title: p.title,
+    intent: p.intent,
+    taskType: p.taskType,
+    modelTarget: v.modelTarget,
+    ir: v.ir,
+    rendered: v.rendered,
+    score: v.scores[0] ?? null,
+  };
+}
+
 export type PublicPrompt = {
   id: string;
   title: string;

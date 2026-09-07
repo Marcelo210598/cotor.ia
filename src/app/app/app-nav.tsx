@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/app", label: "Novo" },
   { href: "/app/prompts", label: "Biblioteca" },
   { href: "/app/templates", label: "Templates" },
+  { href: "/app/galeria", label: "Galeria" },
 ];
 
 export function AppNav() {

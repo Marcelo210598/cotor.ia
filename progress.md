@@ -352,6 +352,24 @@ Achados ao revisar o que faltava nos planos:
 - Aviso "usou 6 de 7" antes do 429.
 - Plano anual / desconto. Plano Team de verdade. Pastas (`Project`) na biblioteca.
 
+## ✅ Fase 7 — Galeria de prompts (07/09) — feature do Pro
+
+- **Schema:** `Prompt.featured` + `@@index` (db push).
+- **Seed** `.dev/seed-gallery.ts` — 45 intenções curadas (5 por categoria × 9),
+  cada uma rodada pelo **motor real** (analyze → synthesize → score), gravada
+  como `featured` de um usuário-sistema (`cotor-galeria-system`). Idempotente
+  (apaga + recria). Custo ~R$3 em API, uma vez. Pra crescer: adiciona em `ITEMS`
+  e roda de novo. `title` curado (não usa o `resumoObjetivo` meta).
+- **`listFeaturedPrompts()`** (agrupa por taskType) + **`getFeaturedForFork(id)`**
+  em `queries.ts`.
+- **`/app/galeria`** — Pro/Team veem a galeria (filtro por categoria, card →
+  dialog com o prompt + score + "Usar como base" + "Copiar"); Free/Starter veem
+  upsell. Link "Galeria" no `app-nav`.
+- **`POST /api/gallery/fork`** — clona o featured pra biblioteca do usuário
+  (BRANCH, copia IR+texto+score, **zero LLM**), redireciona pro `/app/prompts/[id]`.
+  403 `pro_only` se não for Pro.
+- Landing/FAQ/conta: Pro ganhou "Galeria de prompts prontos por categoria".
+
 ## 🚧 Outras pendências
 - Logo real do marcelo.dev pro `MadeBy` (trocar o glifo losango).
 - Fase 6: domínio próprio + SEO + página pública de prompt.
