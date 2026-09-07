@@ -8,8 +8,9 @@ const PLANS = [
     price: "R$0",
     cadence: "pra sempre",
     tagline: "Pra sentir o método.",
+    href: "/entrar",
     features: [
-      "10 prompts por mês",
+      "15 prompts por mês",
       "Score completo nas 10 dimensões",
       "1 modelo-alvo",
       "Histórico de 7 dias",
@@ -30,6 +31,7 @@ const PLANS = [
       "Biblioteca com pastas e tags",
     ],
     cta: "Assinar Pro",
+    href: "/entrar?next=/app/conta",
     highlight: true,
   },
   {
@@ -44,6 +46,7 @@ const PLANS = [
       "Acesso via API",
     ],
     cta: "Falar com a gente",
+    href: "/entrar",
     highlight: false,
   },
 ];
@@ -95,7 +98,7 @@ export function Pricing() {
                 ))}
               </ul>
               <LinkButton
-                href="/entrar"
+                href={plan.href}
                 size="lg"
                 className="mt-6 w-full"
                 variant={plan.highlight ? "default" : "outline"}

@@ -5,13 +5,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { signIn } from "@/lib/auth-client";
 
-export function GoogleSignInButton() {
+export function GoogleSignInButton({
+  callbackURL = "/app",
+}: {
+  callbackURL?: string;
+}) {
   const [loading, setLoading] = useState(false);
 
   async function handle() {
     setLoading(true);
     try {
-      await signIn.social({ provider: "google", callbackURL: "/app" });
+      await signIn.social({ provider: "google", callbackURL });
     } catch {
       toast.error("Não deu pra iniciar o login. Tenta de novo em instantes.");
       setLoading(false);

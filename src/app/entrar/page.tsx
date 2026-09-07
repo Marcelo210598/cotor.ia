@@ -8,7 +8,13 @@ export const metadata: Metadata = {
   title: "Entrar",
 };
 
-export default function EntrarPage() {
+export default async function EntrarPage({
+  searchParams,
+}: PageProps<"/entrar">) {
+  const { next } = await searchParams;
+  const dest =
+    typeof next === "string" && next.startsWith("/app") ? next : "/app";
+
   return (
     <main className="grid flex-1 lg:grid-cols-2">
       {/* painel da marca */}
@@ -39,7 +45,7 @@ export default function EntrarPage() {
           </p>
 
           <div className="mt-8">
-            <GoogleSignInButton />
+            <GoogleSignInButton callbackURL={dest} />
           </div>
 
           <p className="mt-6 text-xs leading-relaxed text-muted-foreground">

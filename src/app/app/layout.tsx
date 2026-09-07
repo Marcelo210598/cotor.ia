@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
@@ -24,7 +25,15 @@ export default async function AppLayout({
             <AppNav />
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="hidden sm:inline">{session.user.email}</span>
+            <Link
+              href="/app/conta"
+              className="transition-colors hover:text-foreground"
+            >
+              Conta
+            </Link>
+            <span className="hidden text-muted-foreground/50 sm:inline">
+              {session.user.email}
+            </span>
             <SignOutButton />
           </div>
         </div>

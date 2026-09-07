@@ -43,6 +43,7 @@ export function Composer() {
   );
   const [loadingLabel, setLoadingLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [rateLimited, setRateLimited] = useState(false);
 
   const [promptId, setPromptId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<ClarifyingQuestion[]>([]);
@@ -59,12 +60,15 @@ export function Composer() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    return res.json();
+    const data = await res.json();
+    if (res.status === 429) setRateLimited(true);
+    return data;
   }
 
   async function start() {
     if (intent.trim().length < 3) return;
     setError(null);
+    setRateLimited(false);
     setPhase("loading");
     setLoadingLabel("Lendo a intenção…");
     try {
@@ -87,6 +91,7 @@ export function Composer() {
 
   async function generate(skipQuestions = false) {
     setError(null);
+    setRateLimited(false);
     setPhase("loading");
     setLoadingLabel("Montando o prompt e pontuando…");
     try {
@@ -116,6 +121,7 @@ export function Composer() {
   async function optimize() {
     if (!promptId) return;
     setError(null);
+    setRateLimited(false);
     setOptimizing(true);
     try {
       const res = await fetch("/api/cotor/optimize", {
@@ -124,6 +130,7 @@ export function Composer() {
         body: JSON.stringify({ promptId }),
       });
       const data = await res.json();
+      if (res.status === 429) setRateLimited(true);
       if ("error" in data) throw new Error(data.error);
       setResult((prev) =>
         prev ? { ...prev, ir: data.ir, rendered: data.rendered, score: data.score } : prev,
@@ -154,9 +161,21 @@ export function Composer() {
     setAnswers({});
     setResult(null);
     setError(null);
+    setRateLimited(false);
     setVersion(1);
     setDelta(undefined);
   }
+
+  const errorLine = error ? (
+    <div className="space-y-2">
+      <p className="text-sm text-destructive">{error}</p>
+      {rateLimited && (
+        <LinkButton href="/app/conta" size="sm" variant="outline">
+          Ver plano e assinar o Pro
+        </LinkButton>
+      )}
+    </div>
+  ) : null;
 
   if (phase === "loading") {
     return (
@@ -192,7 +211,7 @@ export function Composer() {
             </Button>
           </div>
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {errorLine}
         <PromptResult
           ir={result.ir}
           rendered={result.rendered}
@@ -253,7 +272,7 @@ export function Composer() {
           </div>
         )}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {errorLine}
 
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => generate(false)}>
@@ -289,7 +308,7 @@ export function Composer() {
         <span className="text-xs text-muted-foreground">⌘/Ctrl + Enter</span>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {errorLine}
 
       <div className="flex flex-wrap gap-2 pt-2">
         {EXAMPLES.map((ex) => (

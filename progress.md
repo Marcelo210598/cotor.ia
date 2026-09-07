@@ -1,6 +1,6 @@
 # COTOR.IA — Progresso
 
-## Última atualização: 2026-09-06
+## Última atualização: 2026-09-07
 
 ## 📌 Visão Geral
 **COTOR.IA = copiloto de engenharia de prompts.** Você diz a intenção crua, o
@@ -182,8 +182,8 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   **`/app/prompts/[id]`** (por versão) e **`/app/templates/[id]`** (texto
   preenchido). IMAGE = desabilitado ("cola direto no Midjourney/DALL·E").
 - **Rate limit (Upstash):** `src/lib/ratelimit.ts` — `@upstash/ratelimit` +
-  `@upstash/redis`, janela deslizante de 1 dia, limites por plano
-  (FREE 20 gerações/dia · PRO 300 · TEAM 1000; idem optimize/templatize/playground).
+  `@upstash/redis`, janela deslizante, limites por plano. **(5c: FREE virou cota
+  mensal — 15 gerações/30d; PRO 300/dia · TEAM 1000/dia.)**
   Aplicado em `/api/cotor` (só na síntese), `optimize`, `templates/templatize`,
   `playground`. Retorna 429 com msg amigável (+ "assina o Pro" no Free).
   **Fallback:** sem env do Upstash → não limita nada (não quebra local nem deploy).
@@ -198,42 +198,74 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
   (script: limite 2 → 3ª chamada bloqueada). O token do REST = mesmo do TCP.
   Contador "COMMANDS" no dashboard do Upstash sobe conforme uso.
 
-## 🚧 PRÓXIMA SESSÃO — Fase 5c (Billing Asaas)
+## ✅ Concluído — Fase 5c (Billing Asaas) — 07/09
 
 **Só o plano Pro (R$39/mês) é self-serve.** Team = "falar com a gente" (sem checkout).
 
-### O que o Marcelo precisa fazer (setup Asaas — SANDBOX primeiro)
-1. Criar conta **sandbox**: https://sandbox.asaas.com (é separada da produção).
-2. **Configurações → Integrações → Chave de API** → copiar a key.
-3. Passar a key pro Claude → vira `ASAAS_API_KEY` + `ASAAS_ENV=sandbox` (`.env` + Vercel).
-4. Escolher um token aleatório pro webhook → vira `ASAAS_WEBHOOK_TOKEN`.
-5. **Integrações → Webhooks**: URL `https://cotor-ia.vercel.app/api/webhooks/asaas`,
-   o token do passo 4, eventos de **Cobranças** e **Assinaturas**.
-6. Testar: Claude dispara checkout → Marcelo paga Pix de teste no sandbox →
-   webhook vira ele PRO. Validado → criar conta de produção, flipar `ASAAS_ENV`.
+### Decisão de arquitetura
+O **checkout hospedado do Asaas** (`/v3/checkouts`) com recorrência **só aceita
+cartão** — sem Pix. Pra ter Pix na assinatura usamos a **Subscriptions API**:
+criamos o customer + a assinatura (`billingType: UNDEFINED` = pagador escolhe
+Pix/boleto/cartão) e redirecionamos pra `invoiceUrl` da 1ª cobrança.
+**Pegadinha:** criar customer no Asaas **exige CPF/CNPJ** → coletado num campo em
+`/app/conta` antes do checkout, guardado em `User.cpfCnpj` (pergunta 1x só).
 
-### O que o Claude vai construir
-- **Schema (migration):** `User.asaasCustomerId String?`. `Subscription` já serve
-  (`externalId` = id da assinatura Asaas, `status`, `currentPeriodEnd`).
-- `src/lib/asaas.ts` — cliente (URL por `ASAAS_ENV` sandbox/prod), `getOrCreateCustomer`,
-  `createSubscription`. **Fallback:** sem `ASAAS_API_KEY` → billing desabilitado.
-- `POST /api/billing/checkout` — cria customer + assinatura Pro → devolve `invoiceUrl`
-  do Asaas (página hospedada Pix/boleto/cartão) → front redireciona. Cria `Subscription`
-  status pendente.
-- `POST /api/billing/cancel` — cancela no Asaas, mantém PRO até `currentPeriodEnd`.
-- `POST /api/webhooks/asaas` — valida `asaas-access-token` header ==
-  `ASAAS_WEBHOOK_TOKEN` → `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED` = `user.plan=PRO` +
-  `Subscription ACTIVE` + `currentPeriodEnd`; `PAYMENT_OVERDUE` = `PAST_DUE` (carência);
-  `PAYMENT_REFUNDED`/`SUBSCRIPTION_DELETED` = volta FREE. Sempre responde 200.
-- **`/app/conta`** — plano atual, uso do mês (contadores `UsageEvent`), "Assinar Pro"
-  / "Cancelar assinatura" + data da próxima cobrança. Link "Conta" no header.
-- Landing "Assinar Pro" → checkout se logado, `/entrar?next=/app/conta` se não.
-- 429 (`code: rate_limited`) → link pra `/app/conta`.
+### Schema (db push feito no Neon)
+- `User.cpfCnpj String?` + `User.asaasCustomerId String?`
+- `SubscriptionStatus` ganhou `PENDING` (assinatura criada, aguardando 1º pgto).
+- `Subscription` (já existia): `externalId` = id da assinatura Asaas.
 
-### ⚠️ Alinhar limites com o pricing
-Hoje: FREE `cotor` = **20/dia** em `src/lib/ratelimit.ts`. Landing promete **"10
-prompts/mês"**. Alinhar como parte da 5c: FREE `cotor` ~15/mês (janela 30d), Pro
-folgado (300/dia já é ~ilimitado na prática).
+### Backend
+- **`src/lib/asaas.ts`** — cliente. URL por `ASAAS_ENV` (`sandbox` →
+  `api-sandbox.asaas.com/v3`, `production` → `api.asaas.com/v3`). Header
+  `access_token`. `billingEnabled` = false sem `ASAAS_API_KEY` (billing off, não
+  quebra). Funções: `getOrCreateCustomer`, `createProSubscription`,
+  `getFirstInvoiceUrl` (GET `/subscriptions/{id}/payments`, sort dueDate asc,
+  retry 4x), `cancelSubscription`, `getSubscription`. `PRO` = { price 39, cycle
+  MONTHLY }.
+- **`POST /api/billing/checkout`** — body `{ cpfCnpj }` (validado por dígito
+  verificador em `src/lib/billing.ts`). Cria/reusa customer, salva no user,
+  cancela assinatura PENDING antiga se houver, cria assinatura Pro, devolve
+  `{ invoiceUrl }`. 409 se já é PRO/TEAM.
+- **`POST /api/billing/cancel`** — cancela no Asaas, marca `CANCELED`, mantém PRO
+  até `currentPeriodEnd` (se já passou, downgrade na hora).
+- **`POST /api/webhooks/asaas`** — valida header `asaas-access-token` ==
+  `ASAAS_WEBHOOK_TOKEN`. Resolve o user por `externalReference` (nosso userId) →
+  `Subscription.externalId` → `User.asaasCustomerId`. Eventos:
+  `PAYMENT_CONFIRMED`/`RECEIVED` → `plan=PRO` + `ACTIVE` + `currentPeriodEnd`
+  (+1 mês); `PAYMENT_OVERDUE` → `PAST_DUE` (não derruba ainda); `PAYMENT_REFUNDED`
+  / `SUBSCRIPTION_DELETED`/`INACTIVATED` → volta FREE. **Sempre 200** (erro pausa
+  a fila do Asaas).
+
+### Front
+- **`/app/conta`** (`page.tsx` + `conta-client.tsx`) — card do plano atual
+  (badge ativo/atrasado/pendente), barra "gerações no mês" pro FREE, card de
+  upgrade com campo CPF (máscara) + "Assinar Pro", "Cancelar assinatura" pro PRO
+  ativo, grid "uso — últimos 30 dias" (`UsageEvent` via `getAccountSummary`).
+- Link **"Conta"** no header do `/app` (ao lado do e-mail).
+- Landing: Pro CTA → `/entrar?next=/app/conta`; `/entrar` aceita `?next=/app/*`
+  e passa como `callbackURL` do Google.
+- Composer: 429 → mostra "Ver plano e assinar o Pro" (link pra `/app/conta`).
+
+### Limites realinhados (`src/lib/ratelimit.ts`)
+FREE virou **cota mensal** (janela 30d): `cotor` 15/mês, optimize/templatize
+20/mês, playground 30/mês — bate com a landing ("15 prompts por mês").
+PRO/TEAM seguem diários e folgados (300/1000 por dia). Helper `planLimit()`
+exportado (usado pela `/app/conta`).
+
+### Testado
+- **Smoke test real contra o sandbox** (curl): criar customer (CPF/CNPJ ok) →
+  criar assinatura → 1ª cobrança com `invoiceUrl` due hoje (`netValue` 37,74 =
+  taxa ~R$1,26). Dados de teste deletados do sandbox.
+- `npm run build` + `tsc` + `eslint` limpos.
+
+### Setup Asaas — estado
+- **Sandbox:** conta criada, `ASAAS_API_KEY` (hmlg) + `ASAAS_ENV=sandbox` +
+  `ASAAS_WEBHOOK_TOKEN` (`cotor_wh_5dd1abef…`) no `.env` local.
+- ⬜ **Falta:** env vars no Vercel prod · cadastrar o Webhook no painel Asaas
+  (URL `https://cotor-ia.vercel.app/api/webhooks/asaas`, mesmo token, eventos de
+  Cobranças + Assinaturas) · pagar 1 Pix de teste e confirmar que vira PRO ·
+  depois: conta de produção + flipar `ASAAS_ENV=production` + key de prod.
 
 ## 🚧 Outras pendências
 - Logo real do marcelo.dev pro `MadeBy` (trocar o glifo losango).

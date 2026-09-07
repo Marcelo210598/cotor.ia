@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { Ratelimit } from "@upstash/ratelimit";
+import { Ratelimit, type Duration } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 /**
- * Rate limit por usuário e ação, janela deslizante de 1 dia, limites por plano.
- * Sem Upstash configurado (env vazias) → não limita nada. Assim dá pra rodar
- * local e o deploy não quebra antes de plugar as credenciais.
+ * Rate limit por usuário e ação, janela deslizante, limites por plano.
+ *
+ * FREE tem cota mensal (janela de 30 dias) — bate com o pricing da landing.
+ * PRO/TEAM têm cota diária folgada, só pra barrar abuso/loop.
+ *
+ * Sem Upstash configurado (env vazias) → não limita nada. Dá pra rodar local e
+ * o deploy não quebra antes de plugar as credenciais.
  */
 
 const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -14,11 +18,33 @@ const redis = url && token ? new Redis({ url, token }) : null;
 
 export type RlAction = "cotor" | "optimize" | "templatize" | "playground";
 
-const LIMITS: Record<string, Record<RlAction, number>> = {
-  FREE: { cotor: 20, optimize: 15, templatize: 15, playground: 30 },
-  PRO: { cotor: 300, optimize: 300, templatize: 300, playground: 500 },
-  TEAM: { cotor: 1000, optimize: 1000, templatize: 1000, playground: 2000 },
+type Rule = { max: number; window: Duration };
+
+const LIMITS: Record<string, Record<RlAction, Rule>> = {
+  FREE: {
+    cotor: { max: 15, window: "30 d" },
+    optimize: { max: 20, window: "30 d" },
+    templatize: { max: 20, window: "30 d" },
+    playground: { max: 30, window: "30 d" },
+  },
+  PRO: {
+    cotor: { max: 300, window: "1 d" },
+    optimize: { max: 300, window: "1 d" },
+    templatize: { max: 300, window: "1 d" },
+    playground: { max: 500, window: "1 d" },
+  },
+  TEAM: {
+    cotor: { max: 1000, window: "1 d" },
+    optimize: { max: 1000, window: "1 d" },
+    templatize: { max: 1000, window: "1 d" },
+    playground: { max: 2000, window: "1 d" },
+  },
 };
+
+/** Cota da ação pro plano — usado também pela página de conta. */
+export function planLimit(plan: string, action: RlAction): Rule {
+  return (LIMITS[plan] ?? LIMITS.FREE)[action];
+}
 
 const cache = new Map<string, Ratelimit>();
 
@@ -27,10 +53,10 @@ function limiter(plan: string, action: RlAction): Ratelimit | null {
   const key = `${plan}:${action}`;
   let rl = cache.get(key);
   if (!rl) {
-    const max = (LIMITS[plan] ?? LIMITS.FREE)[action];
+    const { max, window } = planLimit(plan, action);
     rl = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(max, "1 d"),
+      limiter: Ratelimit.slidingWindow(max, window),
       prefix: `cotor:rl:${action}`,
       analytics: false,
     });
@@ -39,7 +65,7 @@ function limiter(plan: string, action: RlAction): Ratelimit | null {
   return rl;
 }
 
-/** 429 se estourou o limite diário; `null` se pode seguir. */
+/** 429 se estourou a cota; `null` se pode seguir. */
 export async function rateLimit(
   action: RlAction,
   userId: string,
@@ -52,13 +78,21 @@ export async function rateLimit(
   try {
     const { success, limit, reset } = await rl.limit(userId);
     if (success) return null;
-    const resetMin = Math.max(1, Math.round((reset - Date.now()) / 60000));
+
+    const mins = Math.max(1, Math.round((reset - Date.now()) / 60000));
+    const wait =
+      mins < 90
+        ? `~${mins} min`
+        : mins < 60 * 48
+          ? `~${Math.round(mins / 60)} h`
+          : `~${Math.round(mins / (60 * 24))} dias`;
+
     return NextResponse.json(
       {
         error:
           p === "FREE"
-            ? `Limite diário do plano Free atingido (${limit}/dia). Volta em ~${resetMin} min ou assina o Pro.`
-            : `Limite diário atingido (${limit}/dia). Volta em ~${resetMin} min.`,
+            ? `Cota do plano Free atingida (${limit}/mês). Renova em ${wait} — ou assina o Pro pra continuar agora.`
+            : `Limite de uso atingido (${limit}/dia). Volta em ${wait}.`,
         code: "rate_limited",
       },
       { status: 429 },
