@@ -8,6 +8,7 @@ const patchSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
   tags: z.array(z.string().trim().min(1).max(24)).max(12).optional(),
   archived: z.boolean().optional(),
+  public: z.boolean().optional(),
 });
 
 async function requireUser() {
@@ -45,6 +46,7 @@ export async function PATCH(
         tags: [...new Set(data.tags.map((t) => t.toLowerCase()))],
       }),
       ...(data.archived !== undefined && { archived: data.archived }),
+      ...(data.public !== undefined && { public: data.public }),
     },
   });
   if (count === 0) {

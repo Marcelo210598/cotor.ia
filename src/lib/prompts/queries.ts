@@ -73,6 +73,7 @@ export type PromptDetailData = {
   taskType: TaskType;
   tags: string[];
   archived: boolean;
+  public: boolean;
   createdAt: string;
   updatedAt: string;
   versions: DetailVersion[];
@@ -118,10 +119,62 @@ export async function getPromptDetail(
     taskType: p.taskType as TaskType,
     tags: p.tags,
     archived: p.archived,
+    public: p.public,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
     versions,
   };
+}
+
+export type PublicPrompt = {
+  id: string;
+  title: string;
+  taskType: TaskType;
+  updatedAt: string;
+  version: number;
+  rendered: string;
+  ir: PromptIR;
+  score: ScoreResult | null;
+};
+
+/** View pública (/p/[id]) — só a versão head, sem dados do dono. `null` se
+ * não existe ou não está público. */
+export async function getPublicPrompt(id: string): Promise<PublicPrompt | null> {
+  const p = await prisma.prompt.findFirst({
+    where: { id, public: true, archived: false },
+    include: {
+      versions: {
+        orderBy: { number: "desc" },
+        take: 1,
+        include: { scores: { orderBy: { createdAt: "desc" }, take: 1 } },
+      },
+    },
+  });
+  const v = p?.versions[0];
+  if (!p || !v) return null;
+
+  return {
+    id: p.id,
+    title: p.title,
+    taskType: p.taskType as TaskType,
+    updatedAt: p.updatedAt.toISOString(),
+    version: v.number,
+    rendered: v.rendered,
+    ir: safeParseIr(v.ir),
+    score: v.scores[0] ? scoreFromRow(v.scores[0]) : null,
+  };
+}
+
+/** IDs + data de atualização dos prompts públicos — pro sitemap. */
+export async function listPublicPromptIds(): Promise<
+  { id: string; updatedAt: Date }[]
+> {
+  return prisma.prompt.findMany({
+    where: { public: true, archived: false },
+    select: { id: true, updatedAt: true },
+    orderBy: { updatedAt: "desc" },
+    take: 5000,
+  });
 }
 
 function safeParseIr(value: unknown): PromptIR {

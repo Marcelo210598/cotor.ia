@@ -5,6 +5,7 @@ const nav = [
   { label: "Como funciona", href: "#pipeline" },
   { label: "Prompt Score", href: "#score" },
   { label: "Planos", href: "#planos" },
+  { label: "FAQ", href: "#faq" },
 ];
 
 export function SiteHeader() {

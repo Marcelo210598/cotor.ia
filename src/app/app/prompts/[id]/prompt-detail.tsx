@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Check,
+  Copy,
   GitCompareArrows,
+  Globe,
   Loader2,
   Pencil,
   RotateCcw,
@@ -45,6 +48,12 @@ export function PromptDetail({ detail }: { detail: PromptDetailData }) {
   const [tags, setTags] = useState(detail.tags);
   const [tagDraft, setTagDraft] = useState("");
   const [savingMeta, setSavingMeta] = useState(false);
+  const [isPublic, setIsPublic] = useState(detail.public);
+  const [togglingPublic, setTogglingPublic] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const publicUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/p/${detail.id}` : "";
 
   const selected = versions.find((v) => v.id === selectedId) ?? head;
   const compareWith = compareId
@@ -92,6 +101,32 @@ export function PromptDetail({ detail }: { detail: PromptDetailData }) {
     const next = tags.filter((x) => x !== t);
     setTags(next);
     await patch({ tags: next });
+  }
+
+  async function togglePublic() {
+    const next = !isPublic;
+    setTogglingPublic(true);
+    setIsPublic(next);
+    try {
+      const res = await fetch(`/api/prompts/${detail.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public: next }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Falhou");
+      toast.success(next ? "Prompt público — link pronto pra compartilhar." : "Prompt voltou a ser privado.");
+    } catch (e) {
+      setIsPublic(!next);
+      toast.error((e as Error).message);
+    } finally {
+      setTogglingPublic(false);
+    }
+  }
+
+  async function copyLink() {
+    await navigator.clipboard.writeText(publicUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 1500);
   }
 
   async function restore(v: DetailVersion) {
@@ -174,14 +209,47 @@ export function PromptDetail({ detail }: { detail: PromptDetailData }) {
               </Badge>
             )}
           </div>
-          {selected && (
-            <SaveAsTemplateDialog
-              promptId={detail.id}
-              promptTitle={detail.title}
-              rendered={selected.rendered}
-            />
-          )}
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              variant={isPublic ? "secondary" : "ghost"}
+              size="sm"
+              onClick={togglePublic}
+              disabled={togglingPublic}
+            >
+              {togglingPublic ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Globe className="size-3.5" />
+              )}
+              {isPublic ? "Público" : "Compartilhar"}
+            </Button>
+            {selected && (
+              <SaveAsTemplateDialog
+                promptId={detail.id}
+                promptTitle={detail.title}
+                rendered={selected.rendered}
+              />
+            )}
+          </div>
         </div>
+
+        {isPublic && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-card/50 px-3 py-2">
+            <input
+              readOnly
+              value={publicUrl}
+              className="min-w-0 flex-1 bg-transparent font-mono text-xs text-muted-foreground outline-none"
+            />
+            <Button variant="ghost" size="xs" onClick={copyLink}>
+              {copiedLink ? (
+                <Check className="size-3.5 text-coral" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
+              {copiedLink ? "copiado" : "copiar"}
+            </Button>
+          </div>
+        )}
 
         <p className="mt-2 text-sm text-muted-foreground">{detail.intent}</p>
 

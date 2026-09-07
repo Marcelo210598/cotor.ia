@@ -1,0 +1,29 @@
+# COTOR.IA
+
+> Copiloto de engenharia de prompts. O usuário escreve a intenção crua (o que quer que a IA faça) e o COTOR.IA entrega o prompt profissional pronto: define persona, objetivo, contexto, restrições, formato de saída e exemplos; pontua o resultado numa rubrica técnica de 10 dimensões (Prompt Score, 0–100 / A–E); e reescreve as dimensões fracas em loop. Faz pelo usuário — não é curso nem guia de prompt.
+
+## Fatos
+
+- Produto: aplicativo web (SaaS), em português do Brasil.
+- Site: https://cotor-ia.vercel.app
+- Pilares: Create, Optimize, Test, Organize, Reuse.
+- Prompt IR: representação intermediária estruturada de um prompt (persona, objetivo, contexto, restrições, decomposição, formato de saída, exemplos, critérios de sucesso, guardrails). É o que permite pontuar, comparar versões e renderizar para modelos diferentes.
+- Prompt Score: nota 0–100 (letra A–E) = média ponderada de 10 dimensões: clareza, contexto, objetivo, especificidade, restrições, estrutura, formato, exemplos, ambiguidade, robustez. Pesos fixos → nota consistente entre execuções.
+- Playground: roda o prompt gerado num modelo real (Groq gpt-oss-120b ou Claude Haiku 4.5) para o usuário ver a saída antes de usar.
+- Modelos-alvo suportados na renderização: genérico, Claude (formato XML), modelos de imagem (Midjourney / DALL·E).
+- Motor interno: Groq (gpt-oss-120b) para análise e pontuação; Claude Haiku 4.5 para síntese e otimização.
+- Autenticação: login com conta Google.
+
+## Planos
+
+- Free — R$0/mês, 7 prompts por mês, Prompt Score completo, um gostinho de otimização e Playground.
+- Starter — R$19,90/mês, 50 prompts por mês, otimização e diff de versões liberados, Playground liberado, todos os modelos-alvo.
+- Pro — R$39/mês, geração praticamente ilimitada, biblioteca com pastas e tags.
+- Team — sob consulta, biblioteca compartilhada, papéis, testes de regressão de prompt, acesso via API.
+
+## Links
+
+- Landing e FAQ: https://cotor-ia.vercel.app
+- Termos de uso: https://cotor-ia.vercel.app/termos
+- Política de privacidade: https://cotor-ia.vercel.app/privacidade
+- Entrar: https://cotor-ia.vercel.app/entrar

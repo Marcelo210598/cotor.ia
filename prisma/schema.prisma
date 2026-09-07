@@ -163,6 +163,7 @@ model Prompt {
   taskType  TaskType     @default(OTHER)
   tags      String[]     @default([])
   archived  Boolean      @default(false)
+  public    Boolean      @default(false) // visível em /p/[id] sem login
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -172,6 +173,7 @@ model Prompt {
 
   @@index([userId])
   @@index([projectId])
+  @@index([public])
   @@map("prompt")
 }
 
