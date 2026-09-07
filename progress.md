@@ -355,11 +355,17 @@ Achados ao revisar o que faltava nos planos:
 ## ✅ Fase 7 — Galeria de prompts (07/09) — feature do Pro
 
 - **Schema:** `Prompt.featured` + `@@index` (db push).
-- **Seed** `.dev/seed-gallery.ts` — 45 intenções curadas (5 por categoria × 9),
-  cada uma rodada pelo **motor real** (analyze → synthesize → score), gravada
-  como `featured` de um usuário-sistema (`cotor-galeria-system`). Idempotente
-  (apaga + recria). Custo ~R$3 em API, uma vez. Pra crescer: adiciona em `ITEMS`
-  e roda de novo. `title` curado (não usa o `resumoObjetivo` meta).
+- **Seed** `.dev/seed-gallery.ts` — 45 itens `{title, intent, tt}`. Roda a
+  intenção pelo **motor real** (analyze → synthesize → score) mas **força o
+  `taskType`** (o analyzer joga quase tudo em GENERATION, e IMAGE só renderiza
+  certo com a categoria certa). Grava como `featured` do usuário-sistema
+  `cotor-galeria-system`. **Gap-fill** por título (`FRESH=1` recria do zero).
+  Batch 2 (Groq free tier = 8k TPM / 200k TPD).
+- ⚠️ **07/09: seed parou em 31/45** — o Groq bateu o limite DIÁRIO (200k tokens)
+  com o uso do dia. Faltam **IMAGE (5)** e **AGENT (5)** + "Descrição de produto"
+  (GEN) + 3 de CONVERSATION. As de IMAGE que tinham vindo com taskType errado
+  foram apagadas. **Re-rodar `FRESH=1 npx tsx --env-file=.env .dev/seed-gallery.ts`
+  quando o Groq resetar (meia-noite UTC ≈ 21h BRT).**
 - **`listFeaturedPrompts()`** (agrupa por taskType) + **`getFeaturedForFork(id)`**
   em `queries.ts`.
 - **`/app/galeria`** — Pro/Team veem a galeria (filtro por categoria, card →
