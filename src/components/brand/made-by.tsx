@@ -16,17 +16,26 @@ export function MadeBy({ className }: { className?: string }) {
       )}
     >
       <svg
-        viewBox="0 0 12 12"
-        className="h-3 w-3 text-muted-foreground transition-colors group-hover:text-coral"
+        viewBox="0 0 24 24"
+        className="h-3.5 w-3.5 opacity-80 transition-opacity group-hover:opacity-100"
         aria-hidden
       >
-        <path
-          d="M6 1L11 6L6 11L1 6Z"
+        <defs>
+          <linearGradient id="mdev" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#4F7DF5" />
+            <stop offset="1" stopColor="#7B3FF2" />
+          </linearGradient>
+        </defs>
+        <g
           fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
+          stroke="url(#mdev)"
+          strokeWidth="1.6"
           strokeLinejoin="round"
-        />
+        >
+          <path d="M12 2L22 12L12 22L2 12Z" />
+          <path d="M12 6.5L17.5 12L12 17.5L6.5 12Z" />
+        </g>
+        <circle cx="12" cy="12" r="2.1" fill="url(#mdev)" />
       </svg>
       <span>
         criado por{" "}
