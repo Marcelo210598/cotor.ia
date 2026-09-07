@@ -22,10 +22,16 @@ type Rule = { max: number; window: Duration };
 
 const LIMITS: Record<string, Record<RlAction, Rule>> = {
   FREE: {
-    cotor: { max: 15, window: "30 d" },
-    optimize: { max: 20, window: "30 d" },
-    templatize: { max: 20, window: "30 d" },
-    playground: { max: 30, window: "30 d" },
+    cotor: { max: 7, window: "30 d" },
+    optimize: { max: 3, window: "30 d" },
+    templatize: { max: 3, window: "30 d" },
+    playground: { max: 5, window: "30 d" },
+  },
+  STARTER: {
+    cotor: { max: 50, window: "30 d" },
+    optimize: { max: 60, window: "30 d" },
+    templatize: { max: 60, window: "30 d" },
+    playground: { max: 150, window: "30 d" },
   },
   PRO: {
     cotor: { max: 300, window: "1 d" },
@@ -87,12 +93,14 @@ export async function rateLimit(
           ? `~${Math.round(mins / 60)} h`
           : `~${Math.round(mins / (60 * 24))} dias`;
 
+    const per = planLimit(p, action).window === "1 d" ? "dia" : "mês";
+    const monthly = p === "FREE" || p === "STARTER";
+
     return NextResponse.json(
       {
-        error:
-          p === "FREE"
-            ? `Cota do plano Free atingida (${limit}/mês). Renova em ${wait} — ou assina o Pro pra continuar agora.`
-            : `Limite de uso atingido (${limit}/dia). Volta em ${wait}.`,
+        error: monthly
+          ? `Cota do plano ${p === "FREE" ? "Free" : "Starter"} atingida (${limit}/mês). Renova em ${wait} — ou faz upgrade pra continuar agora.`
+          : `Limite de uso atingido (${limit}/${per}). Volta em ${wait}.`,
         code: "rate_limited",
       },
       { status: 429 },

@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getAccountSummary } from "@/lib/billing";
-import { billingEnabled, PRO } from "@/lib/asaas";
+import { billingEnabled, PLANS } from "@/lib/asaas";
 import { ContaClient } from "./conta-client";
 
 export const metadata = { title: "Conta" };
@@ -26,7 +26,7 @@ export default async function ContaPage() {
           summary={summary}
           email={session.user.email}
           billingEnabled={billingEnabled()}
-          proPrice={PRO.price}
+          prices={{ STARTER: PLANS.STARTER.price, PRO: PLANS.PRO.price }}
         />
       </div>
     </>

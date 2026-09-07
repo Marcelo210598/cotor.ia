@@ -7,7 +7,7 @@ import { isValidCpfCnpj } from "@/lib/billing";
 import {
   billingEnabled,
   getOrCreateCustomer,
-  createProSubscription,
+  createSubscription,
   getFirstInvoiceUrl,
   cancelSubscription,
   AsaasError,
@@ -17,6 +17,7 @@ export const maxDuration = 30;
 
 const bodySchema = z.object({
   cpfCnpj: z.string().min(11).max(20),
+  plan: z.enum(["STARTER", "PRO"]).default("PRO"),
 });
 
 export async function POST(req: Request) {
@@ -58,9 +59,15 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
   }
-  if (user.plan === "PRO" || user.plan === "TEAM") {
+  if (user.plan === "TEAM") {
     return NextResponse.json(
-      { error: "Você já tem um plano pago ativo." },
+      { error: "Você está no plano Team. Fale com a gente pra mudar." },
+      { status: 409 },
+    );
+  }
+  if (user.plan === body.plan && user.subscription?.status === "ACTIVE") {
+    return NextResponse.json(
+      { error: `Você já está no plano ${body.plan === "PRO" ? "Pro" : "Starter"}.` },
       { status: 409 },
     );
   }
@@ -81,25 +88,26 @@ export async function POST(req: Request) {
       data: { cpfCnpj: cpf, asaasCustomerId: customerId },
     });
 
-    // assinatura pendente antiga (usuário voltou pro checkout) → limpa antes
-    const stale = user.subscription;
-    if (stale?.externalId && stale.status !== "ACTIVE") {
-      await cancelSubscription(stale.externalId).catch(() => {});
+    // limpa a assinatura anterior — pendente (voltou pro checkout) ou troca de
+    // plano (Starter↔Pro). O acesso atual só cai quando o pgto novo confirmar.
+    const prev = user.subscription;
+    if (prev?.externalId) {
+      await cancelSubscription(prev.externalId).catch(() => {});
     }
 
-    const sub = await createProSubscription({ customerId, userId });
+    const sub = await createSubscription({ customerId, userId, plan: body.plan });
 
     await prisma.subscription.upsert({
       where: { userId },
       create: {
         userId,
-        plan: "PRO",
+        plan: body.plan,
         status: "PENDING",
         provider: "asaas",
         externalId: sub.id,
       },
       update: {
-        plan: "PRO",
+        plan: body.plan,
         status: "PENDING",
         provider: "asaas",
         externalId: sub.id,

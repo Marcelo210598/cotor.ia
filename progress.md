@@ -200,7 +200,21 @@ e otimiza em loop. Não ensina a escrever prompt — faz a engenharia pelo usuá
 
 ## ✅ Concluído — Fase 5c (Billing Asaas) — 07/09 — TESTADO EM PROD (sandbox)
 
-**Só o plano Pro (R$39/mês) é self-serve.** Team = "falar com a gente" (sem checkout).
+**Self-serve: Starter (R$19,90/mês) e Pro (R$39/mês).** Team = "falar com a gente".
+
+### 07/09 (tarde) — plano Starter adicionado
+- Enum `Plan.STARTER` (db push). Custo real por geração ≈ R$0,06–0,08 (Haiku na
+  síntese = 80%). 50 gerações/mês custa ~R$3–4 → margem ~75% no Starter.
+- `asaas.ts`: `PLANS` (STARTER 19.9 / PRO 39), `createSubscription({plan})`.
+- Checkout aceita `plan: "STARTER"|"PRO"`; permite trocar de plano (cancela a
+  assinatura anterior no Asaas, cria a nova, acesso atual só cai quando o novo
+  pgto confirma). Bloqueia só se já está no mesmo plano ativo, ou é TEAM.
+- Webhook: `activate()` lê o plano da `Subscription` pendente (fallback: valor
+  pago ≤ 25 = STARTER).
+- `/app/conta`: Free vê 2 cards (Starter + Pro); Starter vê "fazer upgrade" pro
+  Pro; CPF pedido 1x pros dois.
+- Landing pricing: 4 colunas (Free 7/mês · Starter · Pro · Team).
+- Smoke test Starter no sandbox OK (fatura R$19,90 gerada).
 
 ### Decisão de arquitetura
 O **checkout hospedado do Asaas** (`/v3/checkouts`) com recorrência **só aceita
@@ -247,11 +261,14 @@ Pix/boleto/cartão) e redirecionamos pra `invoiceUrl` da 1ª cobrança.
   e passa como `callbackURL` do Google.
 - Composer: 429 → mostra "Ver plano e assinar o Pro" (link pra `/app/conta`).
 
-### Limites realinhados (`src/lib/ratelimit.ts`)
-FREE virou **cota mensal** (janela 30d): `cotor` 15/mês, optimize/templatize
-20/mês, playground 30/mês — bate com a landing ("15 prompts por mês").
-PRO/TEAM seguem diários e folgados (300/1000 por dia). Helper `planLimit()`
-exportado (usado pela `/app/conta`).
+### Limites por plano (`src/lib/ratelimit.ts`) — 07/09 c/ Starter
+| Plano | cotor/mês | optimize | templatize | playground |
+|---|---|---|---|---|
+| FREE | 7 | 3 | 3 | 5 | (tudo janela 30d — "gostinho") |
+| STARTER (R$19,90) | 50 | 60 | 60 | 150 | (janela 30d) |
+| PRO (R$39) | 300/dia | 300/d | 300/d | 500/d |
+| TEAM | 1000/dia | ... |
+Helper `planLimit()` exportado. Mensagem 429 é window-aware (mês vs dia).
 
 ### Testado — FLUXO COMPLETO VALIDADO EM PRODUÇÃO (sandbox) ✅
 - **Fix:** `billingEnabled` era `const` de módulo → Next inlinava `process.env`

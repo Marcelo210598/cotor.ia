@@ -43,7 +43,7 @@ const USAGE_KINDS = ["generate", "optimize", "templatize", "playground_run"] as 
 type UsageKind = (typeof USAGE_KINDS)[number];
 
 export type AccountSummary = {
-  plan: "FREE" | "PRO" | "TEAM";
+  plan: "FREE" | "STARTER" | "PRO" | "TEAM";
   hasCpf: boolean;
   subscription: {
     status: "PENDING" | "ACTIVE" | "PAST_DUE" | "CANCELED";

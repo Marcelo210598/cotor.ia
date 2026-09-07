@@ -27,12 +27,15 @@ export function billingEnabled(): boolean {
   return apiKey().length > 0;
 }
 
-/** Plano Pro — único self-serve. Team é "falar com a gente". */
-export const PRO = {
-  price: 39, // R$/mês
-  cycle: "MONTHLY" as const,
-  description: "COTOR.IA — plano Pro (assinatura mensal)",
+/** Planos self-serve. Team é "falar com a gente" (sem checkout). */
+export type PaidPlan = "STARTER" | "PRO";
+
+export const PLANS: Record<PaidPlan, { price: number; label: string }> = {
+  STARTER: { price: 19.9, label: "Starter" },
+  PRO: { price: 39, label: "Pro" },
 };
+
+const CYCLE = "MONTHLY" as const;
 
 export class AsaasError extends Error {}
 
@@ -109,20 +112,22 @@ export async function getOrCreateCustomer(args: {
 
 type AsaasSubscription = { id: string; status: string; nextDueDate?: string };
 
-/** Cria a assinatura Pro. `billingType: UNDEFINED` = pagador escolhe na fatura. */
-export async function createProSubscription(args: {
+/** Cria a assinatura do plano. `billingType: UNDEFINED` = pagador escolhe na fatura. */
+export async function createSubscription(args: {
   customerId: string;
   userId: string;
+  plan: PaidPlan;
 }): Promise<{ id: string }> {
+  const { price, label } = PLANS[args.plan];
   const sub = await call<AsaasSubscription>("/subscriptions", {
     method: "POST",
     body: JSON.stringify({
       customer: args.customerId,
       billingType: "UNDEFINED",
-      value: PRO.price,
+      value: price,
       nextDueDate: todayBR(),
-      cycle: PRO.cycle,
-      description: PRO.description,
+      cycle: CYCLE,
+      description: `COTOR.IA — plano ${label} (assinatura mensal)`,
       externalReference: args.userId,
     }),
   });

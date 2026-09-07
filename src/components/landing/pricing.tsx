@@ -10,12 +10,26 @@ const PLANS = [
     tagline: "Pra sentir o método.",
     href: "/entrar",
     features: [
-      "15 prompts por mês",
+      "7 prompts por mês",
       "Score completo nas 10 dimensões",
-      "1 modelo-alvo",
-      "Histórico de 7 dias",
+      "Um gostinho de otimizar e playground",
     ],
     cta: "Começar",
+    highlight: false,
+  },
+  {
+    name: "Starter",
+    price: "R$19,90",
+    cadence: "/mês",
+    tagline: "Pra quem usa de vez em quando.",
+    href: "/entrar?next=/app/conta",
+    features: [
+      "50 prompts por mês",
+      "Otimizar + diff de versões liberado",
+      "Playground: roda o prompt no modelo real",
+      "Todos os modelos-alvo",
+    ],
+    cta: "Assinar Starter",
     highlight: false,
   },
   {
@@ -25,9 +39,7 @@ const PLANS = [
     tagline: "Pra quem escreve prompt todo dia.",
     features: [
       "Prompts ilimitados",
-      "Loop de otimização e diff de versões",
-      "Todos os modelos-alvo",
-      "Playground: roda o prompt no modelo real",
+      "Tudo do Starter, sem teto de volume",
       "Biblioteca com pastas e tags",
     ],
     cta: "Assinar Pro",
@@ -59,7 +71,7 @@ export function Pricing() {
         <h2 className="mt-4 text-3xl sm:text-4xl">
           Preço proporcional ao uso.
         </h2>
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((plan) => (
             <div
               key={plan.name}

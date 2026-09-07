@@ -19,6 +19,7 @@ type AsaasEntity = {
   externalReference?: string | null;
   dueDate?: string;
   status?: string;
+  value?: number;
 };
 
 type AsaasWebhook = {
@@ -72,8 +73,21 @@ async function activate(userId: string, w: AsaasWebhook) {
   const periodEnd = addMonths(base, 1);
   const externalId = pay?.subscription ?? w.subscription?.id ?? undefined;
 
+  // qual plano essa cobrança paga: o que ficou pendente na nossa Subscription;
+  // se não houver, deriva do valor pago; senão PRO.
+  const current = await prisma.subscription.findUnique({
+    where: { userId },
+    select: { plan: true },
+  });
+  const plan: "STARTER" | "PRO" =
+    current?.plan === "STARTER" || current?.plan === "PRO"
+      ? current.plan
+      : Number(pay?.value) <= 25
+        ? "STARTER"
+        : "PRO";
+
   const subData: Prisma.SubscriptionUncheckedUpdateInput = {
-    plan: "PRO",
+    plan,
     status: "ACTIVE",
     provider: "asaas",
     currentPeriodEnd: periodEnd,
@@ -81,12 +95,12 @@ async function activate(userId: string, w: AsaasWebhook) {
   };
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id: userId }, data: { plan: "PRO" } }),
+    prisma.user.update({ where: { id: userId }, data: { plan } }),
     prisma.subscription.upsert({
       where: { userId },
       create: {
         userId,
-        plan: "PRO",
+        plan,
         status: "ACTIVE",
         provider: "asaas",
         externalId: externalId ?? null,

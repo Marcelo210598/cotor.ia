@@ -87,6 +87,7 @@ model Verification {
 
 enum Plan {
   FREE
+  STARTER
   PRO
   TEAM
 }
