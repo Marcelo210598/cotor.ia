@@ -7,17 +7,20 @@
 // Sem ASAAS_API_KEY o billing fica desligado: `billingEnabled` = false e as
 // funções lançam. As rotas checam isso antes de chamar.
 
-const ENV =
-  process.env.ASAAS_ENV === "production" ? "production" : "sandbox";
+function apiKey(): string {
+  return process.env.ASAAS_API_KEY || "";
+}
 
-const BASE =
-  ENV === "production"
+function baseUrl(): string {
+  return process.env.ASAAS_ENV === "production"
     ? "https://api.asaas.com/v3"
     : "https://api-sandbox.asaas.com/v3";
+}
 
-const KEY = process.env.ASAAS_API_KEY || "";
-
-export const billingEnabled = KEY.length > 0;
+/** Lido em runtime (não em build) — sem `ASAAS_API_KEY` o billing fica off. */
+export function billingEnabled(): boolean {
+  return apiKey().length > 0;
+}
 
 /** Plano Pro — único self-serve. Team é "falar com a gente". */
 export const PRO = {
@@ -34,14 +37,15 @@ async function call<T>(
   path: string,
   init?: RequestInit & { body?: string },
 ): Promise<T> {
-  if (!KEY) throw new AsaasError("Billing não configurado (ASAAS_API_KEY vazia).");
+  const key = apiKey();
+  if (!key) throw new AsaasError("Billing não configurado (ASAAS_API_KEY vazia).");
 
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${baseUrl()}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
       "User-Agent": "COTOR.IA",
-      access_token: KEY,
+      access_token: key,
       ...init?.headers,
     },
     cache: "no-store",

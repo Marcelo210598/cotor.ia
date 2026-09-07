@@ -25,7 +25,7 @@ export default async function ContaPage() {
         <ContaClient
           summary={summary}
           email={session.user.email}
-          billingEnabled={billingEnabled}
+          billingEnabled={billingEnabled()}
           proPrice={PRO.price}
         />
       </div>

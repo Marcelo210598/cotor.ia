@@ -15,6 +15,14 @@ import {
 
 export const maxDuration = 30;
 
+/** diagnóstico rápido (sem segredo) — billing ligado em runtime? */
+export async function GET() {
+  return NextResponse.json({
+    billingEnabled: billingEnabled(),
+    env: process.env.ASAAS_ENV ?? null,
+  });
+}
+
 const bodySchema = z.object({
   cpfCnpj: z.string().min(11).max(20),
 });
@@ -26,7 +34,7 @@ export async function POST(req: Request) {
   if (!session) {
     return NextResponse.json({ error: "Precisa entrar." }, { status: 401 });
   }
-  if (!billingEnabled) {
+  if (!billingEnabled()) {
     return NextResponse.json(
       { error: "Assinatura indisponível no momento." },
       { status: 503 },

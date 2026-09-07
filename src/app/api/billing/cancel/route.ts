@@ -13,7 +13,7 @@ export async function POST() {
   if (!session) {
     return NextResponse.json({ error: "Precisa entrar." }, { status: 401 });
   }
-  if (!billingEnabled) {
+  if (!billingEnabled()) {
     return NextResponse.json({ error: "Indisponível." }, { status: 503 });
   }
 
