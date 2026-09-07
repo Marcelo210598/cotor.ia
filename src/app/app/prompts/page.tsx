@@ -1,15 +1,12 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { listPrompts } from "@/lib/prompts/queries";
 import { LibraryClient } from "./library-client";
 
 export const metadata = { title: "Biblioteca" };
 
 export default async function PromptsLibraryPage() {
-  const session = await auth.api
-    .getSession({ headers: await headers() })
-    .catch(() => null);
+  const session = await getSession();
   if (!session) redirect("/entrar");
 
   const prompts = await listPrompts(session.user.id);

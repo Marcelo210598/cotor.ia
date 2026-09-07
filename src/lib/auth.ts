@@ -26,6 +26,9 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 dias
     updateAge: 60 * 60 * 24, // renova a cada 1 dia de uso
+    // cache da sessão num cookie assinado: evita bater no banco a cada request
+    // (o Neon é em SP, a função na Vercel; sem isso é ~1 round-trip por página)
+    cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
   socialProviders: {
     google: {

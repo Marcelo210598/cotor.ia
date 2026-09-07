@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { Wordmark } from "@/components/brand/wordmark";
 import { MadeBy } from "@/components/brand/made-by";
 import { SignOutButton } from "./sign-out-button";
@@ -10,9 +9,7 @@ import { AppNav } from "./app-nav";
 export default async function AppLayout({
   children,
 }: LayoutProps<"/app">) {
-  const session = await auth.api
-    .getSession({ headers: await headers() })
-    .catch(() => null);
+  const session = await getSession();
 
   if (!session) redirect("/entrar");
 

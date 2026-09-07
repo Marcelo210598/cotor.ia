@@ -1,15 +1,12 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { listTemplates } from "@/lib/templates/queries";
 import { TemplatesClient } from "./templates-client";
 
 export const metadata = { title: "Templates" };
 
 export default async function TemplatesPage() {
-  const session = await auth.api
-    .getSession({ headers: await headers() })
-    .catch(() => null);
+  const session = await getSession();
   if (!session) redirect("/entrar");
 
   const templates = await listTemplates(session.user.id);

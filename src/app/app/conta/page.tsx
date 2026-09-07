@@ -1,6 +1,5 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { getAccountSummary } from "@/lib/billing";
 import { billingEnabled, PLANS } from "@/lib/asaas";
 import { ContaClient } from "./conta-client";
@@ -8,9 +7,7 @@ import { ContaClient } from "./conta-client";
 export const metadata = { title: "Conta" };
 
 export default async function ContaPage() {
-  const session = await auth.api
-    .getSession({ headers: await headers() })
-    .catch(() => null);
+  const session = await getSession();
   if (!session) redirect("/entrar");
 
   const summary = await getAccountSummary(session.user.id);
