@@ -28,25 +28,30 @@ multi-modelo, diff campo-a-campo e score consistente.
 | 4 | Organize + Reuse (biblioteca `/app/prompts`, versões/diff/restore, templates `/app/templates` com `{{x}}` + templatize IA) | ✅ |
 | 5a | Playground (`/api/playground` + `PlaygroundPanel`, roda o prompt num modelo real) | ✅ |
 | 5b | Rate limit Upstash (429 por plano) — **ativo em prod** | ✅ |
-| 5c | Billing Asaas (Subscriptions API + Pix, `/app/conta`, webhook, downgrade) | ✅ código / ⬜ deploy+teste de pgto |
+| 5c | Billing Asaas — Starter R$19,90 + Pro R$39, Pix, `/app/conta`, webhook, cron de expiração | ✅ **EM PRODUÇÃO** |
 | 6 | Domínio próprio + SEO + página pública de prompt | 🟡 no ar, falta domínio |
 
-**NO AR: https://cotor-ia.vercel.app** — login Google OK, rate limit ativo.
-Billing 5c: código pronto, fica OFF em prod até as env vars do Asaas entrarem.
+**NO AR: https://cotor-ia.vercel.app** — login Google, rate limit, **billing Asaas
+em produção** (`ASAAS_ENV=production`). Planos: Free 7/mês · Starter R$19,90
+(50/mês) · Pro R$39 · Team. Fluxo pagamento→webhook→upgrade validado no sandbox.
+Cron diário `billing-sweep` derruba pra FREE no fim do ciclo.
 
-## PRÓXIMA SESSÃO — fechar a 5c
-Falta: env vars Asaas no Vercel · deploy · cadastrar Webhook no painel Asaas ·
-pagar 1 Pix de teste no sandbox e confirmar upgrade · depois migrar pra conta de
-produção Asaas (`ASAAS_ENV=production`). Passo a passo em
-**`historico/2026-09-07.md` → "Próxima sessão"**.
+## PRÓXIMA SESSÃO
+- Fechar a 5c: 1 teste de pagamento real (ou "receber em dinheiro" no painel
+  Asaas de produção) → confirmar upgrade automático.
+- Fase 6: domínio próprio + SEO + página pública de prompt compartilhável.
+- Logo real do marcelo.dev (trocar o glifo losango do `MadeBy`).
+- Team ainda sem fluxo (CTA "Falar com a gente" → `/entrar`; falta e-mail/form).
 
 ## Infra plugada
 - **Neon** Postgres `neondb` (org Vercel). Prisma 6.19.3.
 - **Upstash** Redis `cotor.ia` (Free, sa-east-1, `robust-mongoose-115424.upstash.io`)
   — rate limit. Env no `.env` + Vercel prod.
 - **Google OAuth** — client `cotor-ia-local`, consent screen publicada. Sem verificação.
-- **Asaas** — billing. Conta sandbox criada. `ASAAS_ENV` / `ASAAS_API_KEY` /
-  `ASAAS_WEBHOOK_TOKEN` no `.env` local; falta no Vercel. Subscriptions API v3.
+- **Asaas** — billing **em produção**. Vercel prod: `ASAAS_ENV=production` +
+  key de produção (sem o `$`) + `ASAAS_WEBHOOK_TOKEN` + `CRON_SECRET`. `.env`
+  local segue no sandbox. Webhook cadastrado no painel de produção. Subscriptions
+  API v3. Conta de prod compartilhada com outros projetos do Marcelo.
 - **Vercel** — projeto `cotor-ia`, team Hobby, deploy via `vercel deploy --prod`.
 
 ## Fontes da verdade

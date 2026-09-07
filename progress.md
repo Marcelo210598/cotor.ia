@@ -280,18 +280,20 @@ Helper `planLimit()` exportado. Mensagem 429 é window-aware (mês vs dia).
   `currentPeriodEnd=2026-10-07`). Tela mostrou "Plano Pro · ativo".
 - `npm run build` + `tsc` + `eslint` limpos.
 
-### Setup Asaas — estado
-- **Sandbox:** conta criada. `ASAAS_ENV=sandbox` + `ASAAS_API_KEY` (hmlg) +
-  `ASAAS_WEBHOOK_TOKEN` (`cotor_wh_5dd1abef…`) no `.env` local **e no Vercel prod**.
-- **Webhook cadastrado** no painel sandbox (COTOR.IA, todos os eventos de
-  Cobranças, token conferido). Respondendo 200.
-- ⚠️ **Conta do Marcelo já está PRO no Neon** (do teste). Neon é o mesmo banco de
-  prod → em produção ele já aparece PRO sem ter pago em real. É a conta dele,
-  tudo bem — mas se quiser resetar: `UPDATE user SET plan='FREE'` + apagar a
-  Subscription.
-- ⬜ **Falta pra modo real:** criar/usar conta **de produção** Asaas (o Marcelo
-  já tem uma aprovada) → API key de produção → `ASAAS_ENV=production` no Vercel →
-  re-deploy → cadastrar webhook de produção (mesma URL, mesmo token).
+### Setup Asaas — EM PRODUÇÃO (07/09)
+- **Vercel prod:** `ASAAS_ENV=production` + `ASAAS_API_KEY` = key de produção
+  (guardada SEM o `$` inicial; código recoloca) + `ASAAS_WEBHOOK_TOKEN`
+  (`cotor_wh_5dd1abef4626ec0f235e8d4cb67f8a66343eeb6d92702bee`) + `CRON_SECRET`.
+- **`.env` local:** segue no **sandbox** (pra dev).
+- **Webhook de produção cadastrado** (painel `app.asaas.com` → Integração →
+  Webhooks → "COTOR.IA", todos eventos de Cobranças, mesmo token). A conta de
+  produção do Asaas é compartilhada com TraderOS / Painel Recebimentos / Vida de
+  Trader — cada um com seu webhook.
+- **Conta do Marcelo resetada pra FREE** no Neon (plan FREE, cpfCnpj null,
+  asaasCustomerId null, Subscription apagada) — pra testar o checkout real.
+- Key de produção autentica na API real (200). Webhook responde 200.
+- ⬜ **Falta:** 1 teste de pagamento real (ou "receber em dinheiro" no painel de
+  prod) pra fechar. Taxa real ~R$1/transação Pix.
 
 ## 🚧 Outras pendências
 - Logo real do marcelo.dev pro `MadeBy` (trocar o glifo losango).
