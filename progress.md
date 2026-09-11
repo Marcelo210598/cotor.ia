@@ -1,12 +1,16 @@
 # COTOR.IA — Progresso
 
-## Última atualização: 2026-09-07 (fim do dia)
+## Última atualização: 2026-09-11
 
-> ⚠️ **AMANHÃ — completar a Galeria.** Estão 31/45 prompts; o Groq bateu o limite
-> diário de tokens. Depois das 21h BRT (reset), rodar:
-> `FRESH=1 npx tsx --env-file=.env scripts/seed-gallery.ts`
-> Faltam: IMAGE (5), AGENT (5), CONVERSATION (3), "Descrição de produto" (GEN 1).
-> Passo a passo em `historico/2026-09-07.md`.
+> ⚠️ **Galeria ainda não fechou — 39/45.** Rodei `FRESH=1` e depois o gap-fill
+> (`npx tsx --env-file=.env scripts/seed-gallery.ts`, sem FRESH) 3x hoje; sempre
+> trava nos mesmos 6: "Parceiro de brainstorm" (CONVERSATION) + os 5 de AGENT.
+> **Achado novo:** o limite diário do Groq (200k TPD) não é exclusivo do seed —
+> é a mesma cota que o app usa em produção, então ela já vem consumida pelo
+> tráfego real e volta a encher rápido. Não adianta ficar tentando de novo em
+> poucos minutos; melhor rodar de madrugada (baixo tráfego) ou considerar Dev
+> Tier pago do Groq se isso continuar travando. Gap-fill é idempotente por
+> título — rodar **sem** `FRESH=1` só completa o que falta, não recria os 39 bons.
 
 ## 📌 Visão Geral
 **COTOR.IA = copiloto de engenharia de prompts.** Você diz a intenção crua, o
@@ -370,8 +374,16 @@ Achados ao revisar o que faltava nos planos:
 - ⚠️ **07/09: seed parou em 31/45** — o Groq bateu o limite DIÁRIO (200k tokens)
   com o uso do dia. Faltam **IMAGE (5)** e **AGENT (5)** + "Descrição de produto"
   (GEN) + 3 de CONVERSATION. As de IMAGE que tinham vindo com taskType errado
-  foram apagadas. **Re-rodar `FRESH=1 npx tsx --env-file=.env scripts/seed-gallery.ts`
-  quando o Groq resetar (meia-noite UTC ≈ 21h BRT).**
+  foram apagadas.
+- ⚠️ **11/09: rodei `FRESH=1` (recriou os 45 do zero) → 39/45**, travou nos mesmos
+  6 de sempre: "Parceiro de brainstorm" + os 5 de AGENT. Tentei o gap-fill (sem
+  `FRESH=1`) mais 2x com espera de minutos entre as tentativas — sempre 429.
+  **Achado:** o TPD do Groq free é a mesma cota do app em produção, não é
+  exclusiva do seed — por isso não esvazia rápido mesmo esperando alguns
+  minutos. Ficou em **39/45** (falta AGENT inteiro + 1 CONVERSATION). Pra
+  fechar: rodar `npx tsx --env-file=.env scripts/seed-gallery.ts` (SEM
+  `FRESH=1` — é gap-fill por título, não recria os 39 bons) de madrugada, ou
+  considerar Dev Tier pago do Groq se continuar disputando com produção.
 - **`listFeaturedPrompts()`** (agrupa por taskType) + **`getFeaturedForFork(id)`**
   em `queries.ts`.
 - **`/app/galeria`** — Pro/Team veem a galeria (filtro por categoria, card →

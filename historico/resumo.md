@@ -30,7 +30,7 @@ multi-modelo, diff campo-a-campo e score consistente.
 | 5b | Rate limit Upstash (429 por plano) — **ativo em prod** | ✅ |
 | 5c | Billing Asaas — Starter R$19,90 + Pro R$39, Pix, `/app/conta`, webhook, cron de expiração | ✅ **EM PRODUÇÃO** |
 | 6 | SEO + GEO + página pública de prompt (`/p/[id]`) | ✅ (sem domínio próprio por ora) |
-| 7 | Galeria de prompts prontos por categoria (feature do Pro) | 🟡 31/45 (Groq bateu limite diário) |
+| 7 | Galeria de prompts prontos por categoria (feature do Pro) | 🟡 39/45 (falta AGENT + 1 CONVERSATION, Groq limite diário) |
 
 **NO AR: https://cotor-ia.vercel.app** — Fases 1–7 em produção. Planos: Free 7/mês
 · Starter R$19,90 (50/mês) · Pro R$39 (300/dia) · Team (só CTA). Billing Asaas
@@ -50,10 +50,21 @@ diário `billing-sweep` derruba pra FREE no fim do ciclo.
 - **Logo marcelo.dev feita** (glifo do `MadeBy`).
 - **Marcelo agora está PRO** (comp no Neon; assinatura segue STARTER R$19,90).
 
-## 🚧 PRÓXIMA SESSÃO (amanhã)
-1. **Completar a Galeria** (falta IMAGE 5 + AGENT 5 + CONVERSATION 3 + GEN 1):
-   `FRESH=1 npx tsx --env-file=.env scripts/seed-gallery.ts` depois das 21h BRT
-   (Groq reseta o limite diário à meia-noite UTC). Detalhe em `historico/2026-09-07.md`.
+## Estado 11/09
+- **Tentei fechar a Galeria** — `FRESH=1` recriou os 45 do zero, chegou em
+  39/45; gap-fill (sem FRESH) mais 2 tentativas, sempre trava nos mesmos 6
+  ("Parceiro de brainstorm" + os 5 de AGENT), sempre 429 do Groq.
+- **Achado:** o TPD (200k/dia) do Groq free **não é exclusivo do seed** — é a
+  mesma cota que o app usa em produção pra gerar prompt de usuário real, então
+  ela já chega quase cheia e não esvazia em minutos. Esperar poucos minutos
+  entre tentativas não resolve; precisa ser de madrugada (tráfego baixo) ou
+  Dev Tier pago do Groq. **Ficou em 39/45.**
+
+## 🚧 PRÓXIMA SESSÃO
+1. **Fechar a Galeria** (falta AGENT inteiro + "Parceiro de brainstorm"):
+   `npx tsx --env-file=.env scripts/seed-gallery.ts` **sem** `FRESH=1` (gap-fill
+   por título, não recria os 39 bons) — rodar de madrugada. Detalhe em
+   `historico/2026-09-07.md` e `historico/2026-09-11.md`.
 2. Testar Galeria e troca de plano pela UI.
 3. E-mails do COTOR (welcome/renovação/falha/cancelamento).
 4. Histórico de faturas no `/app/conta` · aviso antes do 429 · fluxo do Team ·
