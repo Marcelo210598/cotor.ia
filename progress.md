@@ -395,8 +395,7 @@ Achados ao revisar o que faltava nos planos:
 - Landing/FAQ/conta: Pro ganhou "Galeria de prompts prontos por categoria".
 
 ## 🚧 Outras pendências
-- Logo real do marcelo.dev pro `MadeBy` (trocar o glifo losango).
-- Fase 6: domínio próprio + SEO + página pública de prompt.
+- Fase 6: domínio próprio (SEO + página pública já feitos, ver seção acima).
 
 ## ⚠️ Decisões / armadilhas
 - **Prisma 7** tem breaking change (sem `url` no schema, exige `prisma.config.ts`
