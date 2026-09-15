@@ -30,7 +30,7 @@ multi-modelo, diff campo-a-campo e score consistente.
 | 5b | Rate limit Upstash (429 por plano) — **ativo em prod** | ✅ |
 | 5c | Billing Asaas — Starter R$19,90 + Pro R$39, Pix, `/app/conta`, webhook, cron de expiração | ✅ **EM PRODUÇÃO** |
 | 6 | SEO + GEO + página pública de prompt (`/p/[id]`) | ✅ (sem domínio próprio por ora) |
-| 7 | Galeria de prompts prontos por categoria (feature do Pro) | 🟡 39/45 (falta AGENT + 1 CONVERSATION, Groq limite diário) |
+| 7 | Galeria de prompts prontos por categoria (feature do Pro) | ✅ 45/45 |
 
 **NO AR: https://cotor-ia.vercel.app** — Fases 1–7 em produção. Planos: Free 7/mês
 · Starter R$19,90 (50/mês) · Pro R$39 (300/dia) · Team (só CTA). Billing Asaas
@@ -60,16 +60,28 @@ diário `billing-sweep` derruba pra FREE no fim do ciclo.
   entre tentativas não resolve; precisa ser de madrugada (tráfego baixo) ou
   Dev Tier pago do Groq. **Ficou em 39/45.**
 
+## ✅ Fase 7 FECHADA (15/09)
+- Causa raiz confirmada: TPD do Groq free (200k/dia) é compartilhado com
+  produção — sempre travava nos mesmos 6 itens porque, na hora de rodar
+  (durante o dia, tráfego real ativo), a cota do dia já tava estourada; não
+  tem relação com esses prompts em si.
+- **Fix:** `analyzeIntent`/`scorePrompt` (`src/lib/ai/engine.ts`) ganharam
+  escape hatch via env var — `ANALYZE_PROVIDER=haiku` / `SCORE_PROVIDER=haiku`
+  fazem essas duas funções usarem Haiku (Anthropic) em vez de Groq. Produção
+  não muda (sem a env var, segue Groq). Rodei o gap-fill com as duas env vars
+  → 5/6 entraram na hora, 1 falhou por erro aleatório de schema do Haiku
+  (11 dimensões em vez de 10), rodei de novo e entrou. **Galeria: 45/45,
+  5 por categoria, confirmado no banco e na UI (`/app/galeria`, fork
+  "Usar como base" testado ponta a ponta, sem erro de console).**
+- Commit `5154b2b`, push + `vercel deploy --prod` feitos
+  (`Aliased: https://cotor-ia.vercel.app`).
+
 ## 🚧 PRÓXIMA SESSÃO
-1. **Fechar a Galeria** (falta AGENT inteiro + "Parceiro de brainstorm"):
-   `npx tsx --env-file=.env scripts/seed-gallery.ts` **sem** `FRESH=1` (gap-fill
-   por título, não recria os 39 bons) — rodar de madrugada. Detalhe em
-   `historico/2026-09-07.md` e `historico/2026-09-11.md`.
-2. Testar Galeria e troca de plano pela UI.
-3. E-mails do COTOR (welcome/renovação/falha/cancelamento).
-4. Histórico de faturas no `/app/conta` · aviso antes do 429 · fluxo do Team ·
+1. Testar troca de plano pela UI.
+2. E-mails do COTOR (welcome/renovação/falha/cancelamento).
+3. Histórico de faturas no `/app/conta` · aviso antes do 429 · fluxo do Team ·
    pastas na biblioteca · site na fatura Asaas ("vida-de-trader.vercel.app").
-5. Opcional: `unstable_cache` no `/p/[id]`; `SCORE_SAMPLES=3` quando Groq for pago.
+4. Opcional: `unstable_cache` no `/p/[id]`; `SCORE_SAMPLES=3` quando Groq for pago.
 
 ## Infra plugada
 - **Neon** Postgres `neondb` (org Vercel). Prisma 6.19.3.
