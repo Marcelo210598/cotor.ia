@@ -1,11 +1,14 @@
 import type { NextConfig } from "next";
 
-// script-src precisa de 'unsafe-inline': o App Router hidrata via <script>
-// inline (self.__next_f.push(...)) sem type — bloquear isso quebra a página.
-// Fechar isso direito exige nonce por request (middleware/proxy.ts), que o
-// projeto não tem hoje. O resto da CSP (frame-ancestors, connect-src etc.)
-// já fecha a maior parte da superfície (clickjacking, carregar script/host
-// externo, exfiltração via fetch se algum XSS colar).
+// script-src com 'unsafe-inline' — DECISÃO CONSCIENTE (não pendência
+// esquecida). Fechar isso direito exige nonce por request (proxy.ts), mas a
+// doc do Next é clara: nonce obriga TODA página a renderizar dinamicamente —
+// mata a estática/ISR da landing, sitemap, OG image e /p/[id] (Fase 6, feito
+// de propósito pra SEO/perf). Sem XSS conhecido hoje pra esse fechamento
+// proteger; reavaliar se algum dia entrar HTML dinâmico de usuário/LLM na
+// página (dangerouslySetInnerHTML, markdown renderer etc.). O resto da CSP
+// (frame-ancestors, connect-src, style/img/font-src) já fecha a maior parte
+// da superfície: clickjacking, script/host externo, exfiltração via fetch.
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
