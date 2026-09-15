@@ -76,12 +76,21 @@ diário `billing-sweep` derruba pra FREE no fim do ciclo.
 - Commit `5154b2b`, push + `vercel deploy --prod` feitos
   (`Aliased: https://cotor-ia.vercel.app`).
 
+## ✅ Auditoria de segurança (15/09)
+6 achados corrigidos e testados (rate limit ausente no clarify do `/api/cotor` — o mais
+sério, timing attack em 2 webhooks, headers/CSP ausentes, cron fail-open, CVE
+`deepmerge-ts`). Depois rodei Semgrep Pro (Trail of Bits, cross-file taint tracking) pra
+confirmar de forma determinística — **0 findings** em 124 arquivos. Detalhe completo em
+`progress.md` (seção "Auditoria de segurança") e `historico/2026-09-15.md`. Commits
+`a1187a3`, `db6c8b5`, `b174bc4`.
+
 ## 🚧 PRÓXIMA SESSÃO
-1. Testar troca de plano pela UI.
-2. E-mails do COTOR (welcome/renovação/falha/cancelamento).
-3. Histórico de faturas no `/app/conta` · aviso antes do 429 · fluxo do Team ·
+1. ⚠️ Revogar o token do Semgrep (foi colado em texto puro no chat).
+2. Testar troca de plano pela UI.
+3. E-mails do COTOR (welcome/renovação/falha/cancelamento).
+4. Histórico de faturas no `/app/conta` · aviso antes do 429 · fluxo do Team ·
    pastas na biblioteca · site na fatura Asaas ("vida-de-trader.vercel.app").
-4. Opcional: `unstable_cache` no `/p/[id]`; `SCORE_SAMPLES=3` quando Groq for pago.
+5. Opcional: `unstable_cache` no `/p/[id]`; `SCORE_SAMPLES=3` quando Groq for pago.
 
 ## Infra plugada
 - **Neon** Postgres `neondb` (org Vercel). Prisma 6.19.3.

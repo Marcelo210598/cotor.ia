@@ -417,6 +417,45 @@ Achados ao revisar o que faltava nos planos:
 | 5 | Playground ✅ · Rate limit (Upstash) ✅ · Billing Asaas ⬜ | 🟡 |
 | 6 | Deploy (domínio, SEO, página pública de prompt) — no ar, falta domínio | 🟡 |
 
+## ✅ Auditoria de segurança (15/09)
+
+Varredura completa pedida pelo Marcelo ("hacker brabo"), em duas camadas:
+
+### 1. Leitura manual (OWASP, skill `owasp-security-check`) — 14 rotas de API + auth + webhooks + headers + deps
+Achados e fixes, todos testados (local + produção) e no ar:
+- **🔴 Crítico:** `/api/cotor` chamava Groq (`analyzeIntent`) **antes** de qualquer rate limit —
+  dava pra automatizar chamada infinita e estourar a mesma cota diária do Groq que travou a
+  Galeria (Fase 7). Fix: novo limiter `"clarify"` em `ratelimit.ts`, checado antes do motor.
+- **🟠 Webhook Asaas / cron:** comparação de token com `!==` (vaza timing) → trocado por
+  `crypto.timingSafeEqual` (`src/lib/security.ts`). Cron `billing-sweep` também virou
+  fail-closed (sem `CRON_SECRET` configurado, nega por padrão — antes ficava público).
+- **🟠 Headers de segurança ausentes:** CSP, `X-Frame-Options`, `X-Content-Type-Options`,
+  `Referrer-Policy`, `Permissions-Policy` adicionados em `next.config.ts`.
+  `script-src 'unsafe-inline'` foi **decisão consciente** (não pendência) — nonce exigiria
+  renderização dinâmica em toda página, matando a estática/ISR da landing e SEO da Fase 6.
+  Confirmado com o Marcelo, documentado no código.
+- **CVE `deepmerge-ts`** (stack exhaustion, high) via `@prisma/config` → corrigido com
+  `overrides` no `package.json` forçando `^8.0.2`, sem mexer na versão do Prisma (6.19.3).
+  `npm audit` → 0 vulnerabilities.
+- Confirmado OK sem mudança: IDOR (todas as rotas filtram por `userId`), CPF/CNPJ nunca
+  volta pro client, `.env` nunca commitado, zero XSS (`dangerouslySetInnerHTML` só em JSON-LD
+  estático), zero SSRF, cookie de sessão `httpOnly+secure+sameSite=lax` (defaults do Better Auth).
+
+Commits: `a1187a3`, `db6c8b5`, `b174bc4`.
+
+### 2. Scan determinístico (Semgrep Pro + Trail of Bits)
+Marcelo pediu algo mais fundo que leitura manual — instalei a skill `trailofbits/skills@semgrep`
+(global) + Semgrep CLI (`brew install semgrep`). Marcelo criou conta Semgrep grátis (free tier:
+10 repos privados/10 contribuidores) e gerou token — rodamos com **Pro** (cross-file taint
+tracking, ~250% mais true positives que OSS). 8 rulesets (`p/security-audit`, `p/secrets`,
+`p/javascript`, `p/typescript`, `p/react`, `p/nodejs`, `p/nextjs`, Trail of Bits) sobre 124
+arquivos (65 TS/TSX reais do projeto). **Resultado: 0 findings**, 0 falhas, 0 parcial —
+confirma os fixes da camada manual e não achou nada novo. SARIF em `.semgrep-scan/`
+(gitignorado, local).
+
+⚠️ Token do Semgrep foi colado em texto puro no chat — Marcelo avisado pra revogar
+(`semgrep.dev` → Settings → Tokens → Revoke) quando não precisar mais.
+
 ## 🔧 Rodar local
 ```bash
 npm install
