@@ -41,6 +41,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
+  // "clarify" (analyzeIntent) já gasta Groq de verdade, mesmo sem persistir
+  // nada — precisa de teto próprio antes de chamar o motor, senão dá pra
+  // automatizar chamada infinita sem nunca bater na cota de "cotor".
+  const clarifyLimited = await rateLimit("clarify", userId, session.user.plan);
+  if (clarifyLimited) return clarifyLimited;
+
   try {
     const analysis = await analyzeIntent(body.intent);
 
@@ -54,7 +60,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ stage: "clarify", analysis });
     }
 
-    // rate limit só na síntese (o passo caro); clarify não conta.
+    // rate limit da cota visível do plano — só na síntese (o passo caro).
     const limited = await rateLimit("cotor", userId, session.user.plan);
     if (limited) return limited;
 

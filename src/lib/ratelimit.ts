@@ -16,31 +16,39 @@ const url = process.env.UPSTASH_REDIS_REST_URL;
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 const redis = url && token ? new Redis({ url, token }) : null;
 
-export type RlAction = "cotor" | "optimize" | "templatize" | "playground";
+export type RlAction = "cotor" | "clarify" | "optimize" | "templatize" | "playground";
 
 type Rule = { max: number; window: Duration };
 
+// "clarify" (analyzeIntent) não conta na cota visível do plano (é só a etapa
+// de perguntas, "de graça" pro usuário) — mas ainda gasta Groq de verdade, e
+// hoje era a ÚNICA ação do motor sem rate limit nenhum. Teto solto (não
+// atrapalha uso normal), só pra impedir alguém automatizar chamadas infinitas.
 const LIMITS: Record<string, Record<RlAction, Rule>> = {
   FREE: {
     cotor: { max: 7, window: "30 d" },
+    clarify: { max: 20, window: "1 d" },
     optimize: { max: 3, window: "30 d" },
     templatize: { max: 3, window: "30 d" },
     playground: { max: 5, window: "30 d" },
   },
   STARTER: {
     cotor: { max: 50, window: "30 d" },
+    clarify: { max: 40, window: "1 d" },
     optimize: { max: 60, window: "30 d" },
     templatize: { max: 60, window: "30 d" },
     playground: { max: 150, window: "30 d" },
   },
   PRO: {
     cotor: { max: 300, window: "1 d" },
+    clarify: { max: 300, window: "1 d" },
     optimize: { max: 300, window: "1 d" },
     templatize: { max: 300, window: "1 d" },
     playground: { max: 500, window: "1 d" },
   },
   TEAM: {
     cotor: { max: 1000, window: "1 d" },
+    clarify: { max: 1000, window: "1 d" },
     optimize: { max: 1000, window: "1 d" },
     templatize: { max: 1000, window: "1 d" },
     playground: { max: 2000, window: "1 d" },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { safeEqual } from "@/lib/security";
 import type { Prisma } from "@prisma/client";
 
 // Webhook do Asaas. Autenticação: header `asaas-access-token` == ASAAS_WEBHOOK_TOKEN
@@ -130,8 +131,8 @@ async function downgrade(userId: string) {
 }
 
 export async function POST(req: Request) {
-  const token = req.headers.get("asaas-access-token");
-  if (!TOKEN || token !== TOKEN) {
+  const token = req.headers.get("asaas-access-token") ?? "";
+  if (!TOKEN || !safeEqual(token, TOKEN)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

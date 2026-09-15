@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { safeEqual } from "@/lib/security";
 
 // Cron diário (vercel.json). Derruba pra FREE quem tem plano pago mas a
 // assinatura acabou:
@@ -14,8 +15,11 @@ export const maxDuration = 30;
 const GRACE_DAYS = 3;
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
+  // Fail-closed: sem CRON_SECRET configurado, ninguém entra (antes era o
+  // oposto — endpoint ficava público se a env var estivesse vazia).
+  const secret = process.env.CRON_SECRET ?? "";
+  const auth = req.headers.get("authorization") ?? "";
+  if (!secret || !safeEqual(auth, `Bearer ${secret}`)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
