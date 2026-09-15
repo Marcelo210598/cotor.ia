@@ -47,9 +47,12 @@ const SCORE_SAMPLES = Math.max(
   Math.min(5, Number(process.env.SCORE_SAMPLES ?? 1)),
 );
 
-/** Passo 1 — lê a intenção crua, classifica e decide se precisa perguntar. (Groq) */
+/** Passo 1 — lê a intenção crua, classifica e decide se precisa perguntar. (Groq,
+ * ou Haiku se ANALYZE_PROVIDER=haiku — escape hatch pra quando a cota diária
+ * do Groq, compartilhada com produção, está sem espaço; ex.: seed da galeria.) */
 export async function analyzeIntent(intent: string): Promise<IntentAnalysis> {
-  const result = await callGroqJson(intentAnalysisSchema, {
+  const call = process.env.ANALYZE_PROVIDER === "haiku" ? callHaikuJson : callGroqJson;
+  const result = await call(intentAnalysisSchema, {
     system: intentSystem,
     user: intentUser(intent),
     temperature: 0.2,
@@ -85,7 +88,8 @@ export async function synthesizePrompt(input: {
   return { ir, rendered: renderIR(ir, input.analysis.taskType, target), target };
 }
 
-/** Passo 3 — pontua com a rubrica de 10 dimensões. Groq, N amostras → mediana. */
+/** Passo 3 — pontua com a rubrica de 10 dimensões. Groq, N amostras → mediana
+ * (ou Haiku se SCORE_PROVIDER=haiku — mesmo escape hatch do analyzeIntent). */
 export async function scorePrompt(
   rendered: string,
   opts?: { taskType?: string },
@@ -94,10 +98,11 @@ export async function scorePrompt(
     opts?.taskType === "IMAGE"
       ? "Este prompt é para um modelo de geração de imagem."
       : undefined;
+  const call = process.env.SCORE_PROVIDER === "haiku" ? callHaikuJson : callGroqJson;
 
   const runs = await Promise.all(
     Array.from({ length: SCORE_SAMPLES }, () =>
-      callGroqJson(scoreResultSchema, {
+      call(scoreResultSchema, {
         system: scoreSystem,
         user: scoreUser(rendered, contexto),
         temperature: SCORE_SAMPLES > 1 ? 0.2 : 0,
