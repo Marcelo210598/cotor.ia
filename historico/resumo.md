@@ -84,6 +84,18 @@ confirmar de forma determinística — **0 findings** em 124 arquivos. Detalhe c
 `progress.md` (seção "Auditoria de segurança") e `historico/2026-09-15.md`. Commits
 `a1187a3`, `db6c8b5`, `b174bc4`.
 
+## ✅ Fix de Functions Storage na Vercel (22/09)
+E-mail da Vercel: time gratuito bateu 100% do limite de Function Storage (10GB
+Hobby). Investigação achou o cotor-ia respondendo por 9,89GB (72% do total) —
+`@prisma/client` empacotava o engine de TODOS os provedores de banco (mysql/
+sqlserver/sqlite/cockroachdb + binário nativo darwin de dev) em cada rota, só
+usando postgresql; + `sharp` bundlado sem necessidade. Fix: `outputFileTracingExcludes`
++ `outputFileTracingRoot` no `next.config.ts`. Medido: 2,43GB → 0,551GB por
+deployment (-77%). Testado local e AO VIVO em produção (home, auth, OG image,
+sitemap via Prisma, tudo ok). Commit `06c516f`, deployado. Detalhe completo em
+`historico/2026-09-22.md`. (De brinde: projeto `califorce`, parado há 122 dias,
+removido do time — respondia por 4GB de Deployment Storage.)
+
 ## 🚧 PRÓXIMA SESSÃO
 1. ⚠️ Revogar o token do Semgrep (foi colado em texto puro no chat).
 2. Testar troca de plano pela UI.

@@ -1,6 +1,25 @@
 # COTOR.IA — Progresso
 
-## Última atualização: 2026-09-11
+## Última atualização: 2026-09-22 — Fix de Functions Storage na Vercel
+
+E-mail da Vercel avisou que o time gratuito bateu 100% do limite de Function
+Storage (Hobby, 10GB). Investigação (painel de Usage por projeto) achou o
+cotor-ia respondendo por **9,89GB (72% do total do time)**. Causa raiz:
+`@prisma/client` empacotava o engine de **todos** os provedores de banco
+(mysql/sqlserver/sqlite/cockroachdb + binário nativo darwin de dev) em cada
+rota, mesmo o projeto usando só `postgresql` (Neon); + `sharp` bundlado sem
+necessidade (Vercel tem infra própria de Image Optimization). Fix em
+`next.config.ts`: `outputFileTracingExcludes` (corta os arquivos não usados
+por rota) + `outputFileTracingRoot` (evita o Next inferir a HOME do usuário
+como monorepo root). **Medido: 2,43GB → 0,551GB por deployment (-77%).**
+Testado local (build+start) e **ao vivo em produção** (home, login, rota
+autenticada, sitemap via Prisma, OG image via `next/og` — tudo normal, sem
+erro nos logs). Commit `06c516f`, deployado (`Aliased: cotor-ia.vercel.app`).
+Detalhe completo: `historico/2026-09-22.md`.
+
+## Atualização anterior: 2026-09-11 (⚠️ desatualizada — Galeria FECHOU em 15/09,
+ver `historico/2026-09-15.md` e `historico/resumo.md`; nota abaixo mantida
+só como registro histórico)
 
 > ⚠️ **Galeria ainda não fechou — 39/45.** Rodei `FRESH=1` e depois o gap-fill
 > (`npx tsx --env-file=.env scripts/seed-gallery.ts`, sem FRESH) 3x hoje; sempre
